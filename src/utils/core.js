@@ -6,20 +6,16 @@ export const createRoutes = routeConfig => {
         })
         return routes
     }
+    if (routeConfig.children) {
+        routeConfig.children.forEach(m => {
+            let path = m.path
+            if (Array.isArray(routeConfig.path)) {
+                m.path = routeConfig.path.map(n => n.concat(path))
+            } else {
+                m.path = routeConfig.path.concat(path)
+            }
+        })
+    }
 
-    let children = routeConfig.children || []
-    delete routeConfig.children
-
-    let routes = [{...routeConfig, exact: true}]
-    children.forEach(m => {
-        let path = m.path
-        if (Array.isArray(routeConfig.path)) {
-            m.path = routeConfig.path.map(n => n.concat(path))
-        } else {
-            m.path = routeConfig.path.concat(path)
-        }
-        createRoutes(m).forEach(n => routes.push(n))
-    })
-
-    return routes
+    return [routeConfig]
 }
