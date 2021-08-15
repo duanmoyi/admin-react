@@ -1,39 +1,43 @@
 import React, {Component, useEffect, useState} from 'react';
-import {ExclamationCircleOutlined, PlusOutlined} from "@ant-design/icons";
-import {Tag, Row, Col, Button, Table, Form, Select, Input, DatePicker, InputNumber, message, Modal, Upload} from "antd";
+import {PlusOutlined} from "@ant-design/icons";
+import {Button, Col, Form, Input, InputNumber, message, Modal, Progress, Row, Select, Table, Tag, Tooltip} from "antd";
 import {defaultFormItemLayout} from "../../../utils/formUtils";
-import ImgCrop from "antd-img-crop";
+import {connect} from "react-redux";
+import {Guid} from "js-guid";
+import {CommonImgUpload, getImgUrl} from "../../../utils/core";
+import request from "../../../request/request";
 
 const {TextArea} = Input
 
-const mockData = [{
-    id: "1",
-    name: "优酷会员半年卡",
-    category: "虚拟奖品",
-}, {
-    id: "2",
-    name: "wyb签名笔记本",
-    category: "实物奖品",
-}]
-
 const columns = (operateFunc) => [{
     title: '图片',
-    dataIndex: 'picture',
-    key: 'picture',
+    dataIndex: 'image',
+    key: 'image',
+    render: value => value ? <img style={{width: '32px', height: '48px'}} src={getImgUrl(value)}/> : <div/>
+    // <DefaultUserImgIcon style={{fontSize: '32px'}}/>
 }, {
     title: '名称',
     dataIndex: 'name',
     key: 'name',
 }, {
     title: '奖品类型',
-    dataIndex: 'category',
-    key: 'category',
+    dataIndex: 'type',
+    key: 'type',
     render: value => value === "虚拟奖品" ? <Tag color={"#F56955"}>{value}</Tag> : <Tag color={"#338c98"}>{value}</Tag>
+}, {
+    title: '消耗数量',
+    dataIndex: 'usedCount',
+    key: 'usedCount',
+    render: (value, record) =>
+        <Tooltip title={"已领取：" + value + "已发放：" + record.assignedCount + "库存：" + record.totalCount}>
+            <Progress width={"50px"} percent={100 * record.assignedCount / record.totalCount}
+                      success={{percent: 100 * value / record.totalCount}}/>
+        </Tooltip>
 }, {
     title: '操作列表',
     dataIndex: 'id',
     key: 'id',
-    render: (value, record) => (record.category === "虚拟奖品" ?
+    render: (value, record) => (record.type === "虚拟奖品" ?
         <a onClick={() => operateFunc.showGiftList(record)}>查看领取信息</a> : <div/>)
 }]
 
@@ -129,14 +133,52 @@ const GiftList = ({visible, data, onCancel}) => {
 
 const EditForm = ({visible, data, onCancel, submit}) => {
     const [form] = Form.useForm()
+    const [category, setCategory] = useState()
+    const [imgFile, setImgFile] = useState([])
 
     useEffect(() => {
         if (data) {
             form.setFieldsValue(data)
-        } else {
-            form.resetFields()
+            setCategory(data.type)
+            if (data.image) {
+                setImgFile([{
+                    uid: Guid.newGuid().toString(),
+                    name: data.image,
+                    status: 'done',
+                    thumbUrl: getImgUrl(data.image),
+                    url: getImgUrl(data.image),
+                }])
+            }
         }
-    })
+        return () => {
+            form.resetFields()
+            setImgFile([])
+        }
+    }, [data, form])
+
+    const changeCategory = value => {
+        setCategory(value)
+    }
+
+    const cancel = () => {
+        onCancel()
+    }
+
+    const imgUploadFunc = (fileList) => {
+        if (fileList.length < 1) {
+            setImgFile([])
+            return
+        }
+
+        let file = fileList[0]
+        if (file.status && file.status === "done") {
+            if (file.response && !file.response.status === true) {
+                message.error("图片上传失败，错误：" + file.response.message)
+                return
+            }
+            setImgFile([file])
+        }
+    }
 
     return (
         <Modal
@@ -145,11 +187,22 @@ const EditForm = ({visible, data, onCancel, submit}) => {
             title={data ? "修改奖品信息" : "添加奖品信息"}
             okText="提交"
             cancelText="取消"
-            onCancel={onCancel}
+            onCancel={cancel}
             onOk={() => {
                 form.validateFields()
                     .then((values) => {
+                        if (imgFile.length > 0) {
+                            let file = imgFile[0]
+                            if (file.response) {
+                                values.image = file.response.data.name
+                            } else {
+                                values.image = file.name
+                            }
+                        } else {
+                            values.image = undefined
+                        }
                         if (data) {
+                            values.id = data.id
                             submit(values, 'edit');
                         } else {
                             submit(values, 'add');
@@ -169,28 +222,25 @@ const EditForm = ({visible, data, onCancel, submit}) => {
                 }]}>
                     <Input placeholder="请输入"/>
                 </Form.Item>
-                <Form.Item name="name" label={"奖品类型"} rules={[{
+                <Form.Item name="type" label={"奖品类型"} rules={[{
                     required: true,
                     message: '请选择奖品类型!',
                 }]}>
-                    <Select>
-                        <Select.Option value="waitStart">虚拟奖品</Select.Option>
-                        <Select.Option value="starting">实物奖品</Select.Option>
+                    <Select onChange={changeCategory}>
+                        <Select.Option value="虚拟奖品">虚拟奖品</Select.Option>
+                        <Select.Option value="实物奖品">实物奖品</Select.Option>
                     </Select>
                 </Form.Item>
-                <Form.Item name="picture" label={"奖品图片"}>
-                    <ImgCrop rotate modalTitle="图片裁剪" aspect={2 / 3}>
-                        <Upload
-                            maxCount={1}
-                            method="POST"
-                            action="/upload-picture"
-                            listType="picture-card"
-                        >
-                            {'+ 点击上传'}
-                        </Upload>
-                    </ImgCrop>
+                {category === "实物奖品" ? <Form.Item name="totalCount" label={"库存数量"} rules={[{
+                    required: true,
+                    message: '请设置库存数量!',
+                }]}>
+                    <InputNumber min={0}/>
+                </Form.Item> : <div/>}
+                <Form.Item name="image" label={"奖品图片"}>
+                    <CommonImgUpload uploadFunc={imgUploadFunc} imgFile={imgFile}/>
                 </Form.Item>
-                <Form.Item name="remark" label={"备注"}>
+                <Form.Item name="details" label={"奖品描述"}>
                     <TextArea rows={2}/>
                 </Form.Item>
             </Form>
@@ -228,10 +278,10 @@ const SearchForm = ({searchFormData, searchFunc}) => {
                         </Form.Item>
                     </Col>
                     <Col span={6}>
-                        <Form.Item name="category" label={"奖品类型"}>
+                        <Form.Item name="type" label={"奖品类型"}>
                             <Select>
-                                <Select.Option value="virtual">虚拟奖品</Select.Option>
-                                <Select.Option value="actual">实物奖品</Select.Option>
+                                <Select.Option value="虚拟奖品">虚拟奖品</Select.Option>
+                                <Select.Option value="实物奖品">实物奖品</Select.Option>
                             </Select>
                         </Form.Item>
                     </Col>
@@ -262,6 +312,10 @@ class GiftConfigPage extends Component {
         modalVisibleState: {editVisible: false, giftListShowVisible: false}
     }
 
+    componentWillMount() {
+        this.props.init()
+    }
+
     modalViewChange = (modalStateKey, view) => {
         const {...modalVisibleState} = this.state.modalVisibleState
         modalVisibleState[modalStateKey] = view
@@ -274,17 +328,33 @@ class GiftConfigPage extends Component {
         this.setState({selectRecord: selectedRows[0]})
     }
 
-    submit = () => {
-
+    submit = async (data, mode) => {
+        if (mode === "edit") {
+            await this.props.update(data)
+        } else {
+            await this.props.add(data)
+        }
+        this.modalViewChange("editVisible", false)
+        this.props.init()
     }
 
     importDetail = () => {
-
+        let id = this.state.selectRecord.id
+        for (let i = 0; i < 100; i++) {
+            const data = {
+                "rewardId": id,
+                "tokens": [
+                    Guid.newGuid().toString()
+                ],
+                "expire": "2021-08-14T09:51:05.174Z",
+            }
+            request("post", "/api/reward_ticket", data)
+        }
     }
 
     enableOperate = {
         edit: () => this.state.selectRecord,
-        importDetail: () => this.state.selectRecord && this.state.selectRecord.category === "虚拟奖品",
+        importDetail: () => this.state.selectRecord && this.state.selectRecord.type === "虚拟奖品",
     }
 
     render() {
@@ -306,7 +376,10 @@ class GiftConfigPage extends Component {
                             <Col>
                                 <Button type="primary" icon={<PlusOutlined/>}
                                         style={{marginBottom: '10px'}}
-                                        onClick={() => this.modalViewChange("editVisible", true)}>添加</Button>
+                                        onClick={() => {
+                                            this.modalViewChange("editVisible", true)
+                                            this.setState({selectRecord: undefined})
+                                        }}>添加</Button>
                             </Col>
                             {this.enableOperate.edit() ? <Col>
                                 <Button icon={<PlusOutlined/>}
@@ -318,7 +391,7 @@ class GiftConfigPage extends Component {
                                 <Button icon={<PlusOutlined/>}
                                         style={{marginBottom: '10px'}}
                                         type="primary"
-                                        onClick={this.importDetail}>导入兑换码</Button>
+                                        onClick={this.importDetail}>导入奖品</Button>
                             </Col> : <div/>}
                         </Row>
                     </div>
@@ -339,15 +412,37 @@ class GiftConfigPage extends Component {
                            columns={columns({
                                showGiftList: () => this.modalViewChange("giftListShowVisible", true),
                            })}
-                           dataSource={mockData}/>
+                           dataSource={this.props.data}/>
                 </div>
                 <GiftList onCancel={() => this.modalViewChange("giftListShowVisible", false)} data={giftListData}
                           visible={this.state.modalVisibleState.giftListShowVisible}/>
-                <EditForm visible={this.state.modalVisibleState.editVisible} data={[]}
+                <EditForm visible={this.state.modalVisibleState.editVisible} data={this.state.selectRecord}
                           onCancel={() => this.modalViewChange("editVisible", false)} submit={this.submit}/>
             </React.Fragment>
         );
     }
 }
 
-export default GiftConfigPage;
+
+const mapState = (state, ownProps) => ({
+    data: state.rewardConfigModel.data,
+    ...ownProps
+})
+
+const mapDispatch = (dispatch) => ({
+    init: async (data) => {
+        await dispatch.rewardConfigModel.init(data)
+    },
+    /*编辑*/
+    update: async (data) => {
+        await dispatch.rewardConfigModel.update(data)
+    },
+    /*添加*/
+    add: async (data) => {
+        await dispatch.rewardConfigModel.add(data)
+    },
+    delete: async (data) => {
+        await dispatch.rewardConfigModel.delete(data)
+    },
+})
+export default connect(mapState, mapDispatch)(GiftConfigPage);

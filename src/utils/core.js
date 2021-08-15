@@ -1,3 +1,7 @@
+import React, {useEffect, useState} from 'react';
+import {Upload} from 'antd';
+import ImgCrop from 'antd-img-crop';
+
 export const createRoutes = routeConfig => {
     if (routeConfig instanceof Array) {
         let routes = []
@@ -18,4 +22,59 @@ export const createRoutes = routeConfig => {
     }
 
     return [routeConfig]
+}
+
+export const CommonImgUpload = ({uploadFunc, imgFile, maxCount = 1}) => {
+    const [fileList, setFileList] = useState([]);
+
+    useEffect(() => {
+        setFileList(imgFile)
+    }, [imgFile])
+
+    const onChange = ({fileList: newFileList}) => {
+        setFileList(newFileList);
+        uploadFunc(newFileList)
+    };
+
+    const onPreview = async file => {
+        let src = file.url;
+        if (!src) {
+            src = await new Promise(resolve => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file.originFileObj);
+                reader.onload = () => resolve(reader.result);
+            });
+        }
+        const image = new Image();
+        image.src = src;
+        const imgWindow = window.open(src);
+        imgWindow.document.write(image.outerHTML);
+    };
+
+    const isImageUrl = (file) => {
+        return true;
+    };
+
+
+    return (
+        <ImgCrop rotate modalTitle="图片裁剪">
+            <Upload
+                isImageUrl={isImageUrl}
+                maxCount={maxCount}
+                method="POST"
+                action="/upload-picture"
+                listType="picture-card"
+                fileList={fileList}
+                onChange={onChange}
+                onPreview={onPreview}
+            >
+                {fileList.length < maxCount && '+ 点击上传'}
+            </Upload>
+        </ImgCrop>
+    )
+}
+
+export const getImgUrl = (path) => {
+    return "/resource/" + path
+
 }

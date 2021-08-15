@@ -69,7 +69,7 @@ const getSelectMenuData = (selectMenuKey) => {
     return subMenus.filter(m => m.key === selectMenuKey)[0]
 }
 
-export const layoutConfig = {
+export default {
     state: {
         selectMenuKey: 'activeRuleConfig',
         menus: layoutMenuData,
@@ -105,4 +105,3 @@ export const layoutConfig = {
     })
 }
 
-export default layoutConfig

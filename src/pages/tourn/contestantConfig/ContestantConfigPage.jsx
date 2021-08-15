@@ -1,74 +1,39 @@
-import React, {Component, useEffect} from 'react';
-import {Button, Col, Form, Input, Modal, Row, Select, Table, Tag, Upload} from "antd";
+import React, {Component, useEffect, useState} from 'react';
+import {Button, Col, Form, Input, message, Modal, Row, Select, Table, Tag, Radio} from "antd";
 import {PlusOutlined} from "@ant-design/icons";
 import {defaultFormItemLayout} from "../../../utils/formUtils";
 import ImgCrop from "antd-img-crop";
+import {connect} from "react-redux";
+import {Guid} from "js-guid";
+import {CommonImgUpload, getImgUrl} from "../../../utils/core";
 
 const {TextArea} = Input
 
-const mockData = [{
-    id:"1",
-    name:"阿毛",
-    fromArea:"广东深圳",
-    delegateArea:"浙江杭州",
-    orderNum:"前16强",
-    status:"已淘汰",
-    teamName:"战队1"
-},{
-    id:"2",
-    name:"阿毛",
-    fromArea:"广东深圳",
-    delegateArea:"浙江杭州",
-    orderNum:"前16强",
-    status:"正在参赛"
-},{
-    id:"3",
-    name:"阿毛",
-    fromArea:"广东深圳",
-    delegateArea:"浙江杭州",
-    orderNum:"前16强",
-    status:"正在参赛",
-    teamName:"战队3"
-},{
-    id:"4",
-    name:"阿毛",
-    fromArea:"广东深圳",
-    delegateArea:"浙江杭州",
-    orderNum:"前16强",
-    status:"正在参赛"
-},{
-    id:"5",
-    name:"阿毛",
-    fromArea:"广东深圳",
-    delegateArea:"浙江杭州",
-    orderNum:"前16强",
-    status:"正在参赛"
-}]
-
 const columns = (operateFunc) => [{
     title: '选手头像',
-    dataIndex: 'picture',
-    key: 'picture',
-}, {
-    title: '背景图',
-    dataIndex: 'backgroundImg',
-    key: 'backgroundImg',
+    dataIndex: 'avatar',
+    key: 'avatar',
+    render: value => value ? <img style={{width: '32px', height: '48px'}} src={getImgUrl(value)}/> : <div/>
 }, {
     title: '选手姓名',
     dataIndex: 'name',
     key: 'name',
 }, {
+    title: '选手性别',
+    dataIndex: 'gender',
+    key: 'gender',
+}, {
     title: '所属战队',
     dataIndex: 'teamName',
     key: 'teamName',
 }, {
-    title: '来自区域',
-    dataIndex: 'fromArea',
-    key: 'fromArea',
+    title: '籍贯',
+    dataIndex: 'region',
+    key: 'region',
 }, {
-    title: '代表区域',
-    dataIndex: 'delegateArea',
-    key: 'delegateArea',
+    title: '代表城市',
+    dataIndex: 'representRegion',
+    key: 'representRegion',
 }, {
     title: '当前排名',
     dataIndex: 'orderNum',
@@ -77,7 +42,7 @@ const columns = (operateFunc) => [{
     title: '晋级状态',
     dataIndex: 'status',
     key: 'status',
-    render: (value, record) => record.status === "已淘汰"  ? <Tag color={"#e3e0e2"}>{value}</Tag> :
+    render: (value, record) => record.status === "已淘汰" ? <Tag color={"#e3e0e2"}>{value}</Tag> :
         <Tag color={"#45e047"}>{value}</Tag>
 }, {
     title: '操作列表',
@@ -87,12 +52,10 @@ const columns = (operateFunc) => [{
         <Col><a onClick={() => operateFunc.editFunc(record)}>编辑</a></Col>
         <Col>{record.teamName ? <a onClick={() => operateFunc.editTeam(record)}>更换战队</a> :
             <a onClick={() => operateFunc.editTeam(record)}>加入战队</a>}</Col>
-        <Col>{record.status === "已淘汰" ? <a onClick={() => operateFunc.recovery(record)}>复活</a> :
-            <a onClick={() => operateFunc.levelUp(record)}>晋级下一轮</a>}</Col>
     </Row>
 }]
 
-const EditTutorForm = ({visible, data, onCancel, submit}) => {
+const EditTutorForm = ({visible, data, onCancel, submit, teamData}) => {
     const [form] = Form.useForm()
 
     useEffect(() => {
@@ -114,7 +77,9 @@ const EditTutorForm = ({visible, data, onCancel, submit}) => {
             onOk={() => {
                 form.validateFields()
                     .then((values) => {
-                        submit(values)
+                        data.teamId = values.teamId
+                        delete data.teamName
+                        submit(data, 'edit')
                     }).catch((info) => {
                     console.log('Validate Failed:', info);
                 });
@@ -123,15 +88,12 @@ const EditTutorForm = ({visible, data, onCancel, submit}) => {
                 {...defaultFormItemLayout}
                 form={form}
             >
-                <Form.Item name="name" label={"选择加入的战队"} rules={[{
+                <Form.Item name="teamId" label={"选择战队"} rules={[{
                     required: true,
-                    message: '选择加入的战队!',
+                    message: '选择战队!',
                 }]}>
                     <Select>
-                        <Select.Option value="waitStart">战队1</Select.Option>
-                        <Select.Option value="starting">战队2</Select.Option>
-                        <Select.Option value="starting">战队3</Select.Option>
-                        <Select.Option value="starting">战队4</Select.Option>
+                        {teamData.map(m => <Select.Option value={m.teamId}>{m.teamName}</Select.Option>)}
                     </Select>
                 </Form.Item>
             </Form>
@@ -139,16 +101,46 @@ const EditTutorForm = ({visible, data, onCancel, submit}) => {
     );
 }
 
-const EditForm = ({visible, data, onCancel, submit}) => {
+const EditForm = ({visible, data, onCancel, submit, teamData}) => {
     const [form] = Form.useForm()
+    const [imgFile, setImgFile] = useState([])
 
     useEffect(() => {
         if (data) {
             form.setFieldsValue(data)
+            if (data.avatar) {
+                setImgFile([{
+                    uid: Guid.newGuid().toString(),
+                    name: data.avatar,
+                    status: 'done',
+                    thumbUrl: getImgUrl(data.avatar),
+                    url: getImgUrl(data.avatar),
+                }])
+            }
         } else {
             form.resetFields()
         }
-    })
+        return () => {
+            form.resetFields()
+            setImgFile([])
+        }
+    }, [data, form])
+
+    const imgUploadFunc = (fileList) => {
+        if (fileList.length < 1) {
+            setImgFile([])
+            return
+        }
+
+        let file = fileList[0]
+        if (file.status && file.status === "done") {
+            if (file.response && !file.response.status === true) {
+                message.error("图片上传失败，错误：" + file.response.message)
+                return
+            }
+            setImgFile([file])
+        }
+    }
 
     return (
         <Modal
@@ -161,8 +153,23 @@ const EditForm = ({visible, data, onCancel, submit}) => {
             onOk={() => {
                 form.validateFields()
                     .then((values) => {
+                        if (imgFile.length > 0) {
+                            let file = imgFile[0]
+                            if (file.response) {
+                                values.avatar = file.response.data.name
+                            } else {
+                                values.avatar = file.name
+                            }
+                        } else {
+                            values.image = undefined
+                        }
+                        if (!values.gender) {
+                            values.gender = "男"
+                        }
                         if (data) {
-                            submit(values, 'edit');
+                            values.status = data.status
+                            values.id = data.id
+                            submit(values, 'edit')
                         } else {
                             submit(values, 'add');
                         }
@@ -181,53 +188,46 @@ const EditForm = ({visible, data, onCancel, submit}) => {
                 }]}>
                     <Input placeholder="请输入"/>
                 </Form.Item>
-                <Form.Item name="name" label={"代表区域"} rules={[{
+                <Form.Item name="gender" label={"性别"}>
+                    <Radio.Group defaultValue={"男"}>
+                        <Radio value={"男"}>男</Radio>
+                        <Radio value={"女"}>女</Radio>
+                    </Radio.Group>
+                </Form.Item>
+                <Form.Item name="teamId" label={"所属战队"} rules={[{
+                    required: true,
+                    message: '选择战队!',
+                }]}>
+                    <Select>
+                        {teamData.map(m => <Select.Option value={m.teamId}>{m.teamName}</Select.Option>)}
+                    </Select>
+                </Form.Item>
+                <Form.Item name="representRegion" label={"代表城市"} rules={[{
                     required: true,
                     message: '请选择代表区域!',
                 }]}>
                     <Select>
-                        <Select.Option value="waitStart">江西</Select.Option>
-                        <Select.Option value="starting">浙江</Select.Option>
-                        <Select.Option value="starting">福建</Select.Option>
-                        <Select.Option value="starting">广东</Select.Option>
+                        <Select.Option value="江西">江西</Select.Option>
+                        <Select.Option value="浙江">浙江</Select.Option>
+                        <Select.Option value="福建">福建</Select.Option>
+                        <Select.Option value="广东">广东</Select.Option>
                     </Select>
                 </Form.Item>
-                <Form.Item name="name" label={"来自区域"} rules={[{
+                <Form.Item name="region" label={"籍贯"} rules={[{
                     required: true,
                     message: '请选择来自区域!',
                 }]}>
                     <Select>
-                        <Select.Option value="waitStart">江西</Select.Option>
-                        <Select.Option value="starting">浙江</Select.Option>
-                        <Select.Option value="starting">福建</Select.Option>
-                        <Select.Option value="starting">广东</Select.Option>
+                        <Select.Option value="江西">江西</Select.Option>
+                        <Select.Option value="浙江">浙江</Select.Option>
+                        <Select.Option value="福建">福建</Select.Option>
+                        <Select.Option value="广东">广东</Select.Option>
                     </Select>
                 </Form.Item>
-                <Form.Item name="picture" label={"选手头像"}>
-                    <ImgCrop rotate modalTitle="图片裁剪" aspect={2 / 3}>
-                        <Upload
-                            maxCount={1}
-                            method="POST"
-                            action="/upload-picture"
-                            listType="picture-card"
-                        >
-                            {'+ 点击上传'}
-                        </Upload>
-                    </ImgCrop>
+                <Form.Item name="avatar" label={"选手头像"}>
+                    <CommonImgUpload uploadFunc={imgUploadFunc} imgFile={imgFile}/>
                 </Form.Item>
-                <Form.Item name="picture" label={"选手背景图"}>
-                    <ImgCrop rotate modalTitle="图片裁剪" aspect={2 / 3}>
-                        <Upload
-                            maxCount={1}
-                            method="POST"
-                            action="/upload-picture"
-                            listType="picture-card"
-                        >
-                            {'+ 点击上传'}
-                        </Upload>
-                    </ImgCrop>
-                </Form.Item>
-                <Form.Item name="remark" label={"特长描述"}>
+                <Form.Item name="specialty" label={"特长描述"}>
                     <TextArea rows={2}/>
                 </Form.Item>
                 <Form.Item name="remark" label={"其他描述"}>
@@ -302,10 +302,16 @@ const SearchForm = ({searchFormData, searchFunc}) => {
     </Form>
 }
 
-class ContestantConfgPage extends Component {
+class ContestantConfigPage extends Component {
     state = {
         loading: false,
+        selectRecord: undefined,
         modalVisibleState: {editVisible: false}
+    }
+
+
+    componentWillMount() {
+        this.props.init()
     }
 
     modalViewChange = (modalStateKey, view) => {
@@ -316,8 +322,15 @@ class ContestantConfgPage extends Component {
         })
     }
 
-    submit = () => {
-
+    submit = async (data, mode) => {
+        if (mode === "edit") {
+            await this.props.update(data)
+        } else {
+            await this.props.add(data)
+        }
+        this.modalViewChange("editVisible", false)
+        this.modalViewChange("editTutorVisible", false)
+        this.props.init()
     }
 
     render() {
@@ -337,23 +350,58 @@ class ContestantConfgPage extends Component {
                     <div style={{marginBottom: '10px', marginLeft: '10px'}}>
                         <Button type="primary" icon={<PlusOutlined/>}
                                 style={{marginBottom: '10px', marginLeft: '10px'}}
-                                onClick={() => this.modalViewChange("editVisible", true)}>添加</Button>
+                                onClick={() => {
+                                    this.modalViewChange("editVisible", true)
+                                    this.setState({selectRecord: undefined})
+                                }}>添加</Button>
                     </div>
-                    <Table style={{marginLeft: '10px'}} loading={this.state.loading}
+                    <Table style={{marginLeft: '10px'}} loading={this.state.loading} rowKey={"id"}
+                           onRow={
+                               record => ({
+                                   onClick: event => {
+                                       this.setState({selectRecord: record})
+                                   },
+                               })
+                           }
                            columns={columns({
                                editFunc: () => this.modalViewChange("editVisible", true),
                                editTeam: () => this.modalViewChange("editTutorVisible", true),
                            })}
-                           dataSource={mockData}/>
+                           dataSource={this.props.data}/>
                 </div>
-                <EditForm visible={this.state.modalVisibleState.editVisible} data={[]}
+                <EditForm visible={this.state.modalVisibleState.editVisible} data={this.state.selectRecord}
+                          teamData={this.props.teamData}
                           onCancel={() => this.modalViewChange("editVisible", false)} submit={this.submit}/>
-                <EditTutorForm visible={this.state.modalVisibleState.editTutorVisible} data={[]}
+                <EditTutorForm visible={this.state.modalVisibleState.editTutorVisible} data={this.state.selectRecord}
+                               teamData={this.props.teamData}
                                onCancel={() => this.modalViewChange("editTutorVisible", false)}
-                               submit={this.editTutorVisible}/>
+                               submit={this.submit}/>
             </React.Fragment>
         );
     }
 }
 
-export default ContestantConfgPage;
+const mapState = (state, ownProps) => ({
+    data: state.contestantConfigModel.data,
+    teamData: state.teamConfigModel.data,
+    ...ownProps
+})
+
+const mapDispatch = (dispatch) => ({
+    init: async (data) => {
+        await dispatch.contestantConfigModel.init(data)
+        await dispatch.teamConfigModel.init()
+    },
+    /*编辑*/
+    update: async (data) => {
+        await dispatch.contestantConfigModel.update(data)
+    },
+    /*添加*/
+    add: async (data) => {
+        await dispatch.contestantConfigModel.add(data)
+    },
+    delete: async (data) => {
+        await dispatch.contestantConfigModel.delete(data)
+    },
+})
+export default connect(mapState, mapDispatch)(ContestantConfigPage);

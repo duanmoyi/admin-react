@@ -1,7 +1,7 @@
-import ContestantConfg from "./contestantConfig";
+import ContestantConfig from "./contestantConfig";
 import TeamConfig from "./teamConfig";
 
 export  {
-    ContestantConfg,
+    ContestantConfig,
     TeamConfig,
 }

@@ -47,7 +47,21 @@ const mockData = [{
     activeStageName: "32晋16竞猜活动",
     receiveStatus: "已领取",
     receiveTime: "2021-08-11 15:21:32",
+    expressStatus: "未发货",
 }]
+
+const getExpressStatus = record => {
+    let giftCategory = record.giftCategory
+    let receiveStatus = record.receiveStatus
+    let expressStatus = record.expressStatus
+
+    if (giftCategory === "虚拟奖品") {
+        return receiveStatus === "已领取" ? <Tag color={"#9ddb8c"}>已发货</Tag> : <div/>
+    }
+
+    return receiveStatus === "已领取" ? expressStatus === "已发货" ? <Tag color={"#9ddb8c"}>已发货</Tag> :
+        <Tag color={"#515d1b"}>待发货</Tag> : <div/>
+}
 
 const columns = (operateFunc) => [{
     title: '获奖用户',
@@ -73,7 +87,7 @@ const columns = (operateFunc) => [{
     title: '领取状态',
     dataIndex: 'receiveStatus',
     key: 'receiveStatus',
-    render: (value) => value === "已领取" ? <Tag color={"#0a5d1c"}>{value}</Tag> :
+    render: (value, record) => value === "已领取" ? <Tag color={"#0a5d1c"}>{value}</Tag> :
         <Tag color={"#e596a8"}>{value}</Tag>
 }, {
     title: '领取时间',
@@ -83,8 +97,7 @@ const columns = (operateFunc) => [{
     title: '发货状态',
     dataIndex: 'expressStatus',
     key: 'expressStatus',
-    render: (value, record) => record.giftCategory === "实物奖品" ? value === "已发货" ? <Tag color={"#9ddb8c"}>{value}</Tag> :
-        <Tag color={"#515d1b"}>{value}</Tag> : <div/>
+    render: (value, record) => getExpressStatus(record)
 }, {
     title: '发货时间',
     dataIndex: 'expressTime',

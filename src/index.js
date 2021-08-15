@@ -7,15 +7,19 @@ import {init} from "@rematch/core"
 import {Provider} from "react-redux"
 import {Router} from "@reach/router";
 import zh_CN from 'antd/lib/locale-provider/zh_CN'
-import {ConfigProvider} from "antd";
+import {ConfigProvider, message} from "antd";
 import {Login} from "./pages/login";
 import {Home} from "./pages/home";
 import {ActiveRuleConfig, ActiveStageConfig, GiftConfig, GiftRecord, TicketRecord} from "./pages/active";
-import {ContestantConfg, TeamConfig} from "./pages/tourn";
+import {ContestantConfig, TeamConfig} from "./pages/tourn";
 import {SysConfig} from "./pages/sys";
 import {UserInfo} from "./pages/user";
 
 const store = init({models});
+
+message.config({
+    maxCount:1
+})
 
 ReactDOM.render(
     <Provider store={store}>
@@ -31,7 +35,7 @@ ReactDOM.render(
                     <TeamConfig path="/teamConfig"/>
                     <SysConfig path="/sysConfig"/>
                     <UserInfo path="/userConfig"/>
-                    <ContestantConfg path="/contestantConfig"/>
+                    <ContestantConfig path="/contestantConfig"/>
                 </Home>
             </Router>
         </ConfigProvider>

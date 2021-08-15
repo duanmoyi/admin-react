@@ -1,3 +1,3 @@
-import ContestantConfg from "./ContestantConfgPage"
+import ContestantConfig from "./ContestantConfigPage"
 
-export default ContestantConfg
+export default ContestantConfig
