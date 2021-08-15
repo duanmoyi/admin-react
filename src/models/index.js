@@ -4,6 +4,7 @@ import activeStageConfigModel from "./ActiveStageConfigModel";
 import rewardConfigModel from "./RewardConfigModel";
 import teamConfigModel from "./TeamConfigModel";
 import contestantConfigModel from "./ContestantConfigModel";
+import rewardRecordConfig from "./RewardRecordConfigModel";
 
 export default {
     layoutConfig,
@@ -12,4 +13,5 @@ export default {
     rewardConfigModel,
     teamConfigModel,
     contestantConfigModel,
+    rewardRecordConfig,
 }

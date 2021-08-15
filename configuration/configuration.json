@@ -2,8 +2,8 @@
   "serverPort": 53103,
   "defaultPageSize": 10,
   "maxPageSize": 10000000,
-  "apiServerHost": "10.1.1.146",
-  "apiServerPort": 8080,
+  "apiServerHost": "www.duanmoyi.com",
+  "apiServerPort": 80,
   "apiRequestTimeout": 300000,
   "resourceDir":"./picture/"
 }

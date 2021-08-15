@@ -57,20 +57,18 @@ export const CommonImgUpload = ({uploadFunc, imgFile, maxCount = 1}) => {
 
 
     return (
-        <ImgCrop rotate modalTitle="图片裁剪">
-            <Upload
-                isImageUrl={isImageUrl}
-                maxCount={maxCount}
-                method="POST"
-                action="/upload-picture"
-                listType="picture-card"
-                fileList={fileList}
-                onChange={onChange}
-                onPreview={onPreview}
-            >
-                {fileList.length < maxCount && '+ 点击上传'}
-            </Upload>
-        </ImgCrop>
+        <Upload
+            isImageUrl={isImageUrl}
+            maxCount={maxCount}
+            method="POST"
+            action="/upload-picture"
+            listType="picture-card"
+            fileList={fileList}
+            onChange={onChange}
+            onPreview={onPreview}
+        >
+            {fileList.length < maxCount && '+ 点击上传'}
+        </Upload>
     )
 }
 

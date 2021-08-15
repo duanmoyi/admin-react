@@ -13,7 +13,7 @@ const columns = (operateFunc) => [{
     title: '选手头像',
     dataIndex: 'avatar',
     key: 'avatar',
-    render: value => value ? <img style={{width: '32px', height: '48px'}} src={getImgUrl(value)}/> : <div/>
+    render: value => value ? <img style={{height: '48px'}} src={getImgUrl(value)}/> : <div/>
 }, {
     title: '选手姓名',
     dataIndex: 'name',

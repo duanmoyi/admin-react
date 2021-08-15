@@ -1,6 +1,21 @@
 import React, {Component, useEffect, useState} from 'react';
 import {ExclamationCircleOutlined, PlusOutlined} from "@ant-design/icons";
-import {Tag, Row, Col, Button, Table, Form, Select, Input, DatePicker, InputNumber, message, Modal, Upload} from "antd";
+import {
+    Tag,
+    Row,
+    Col,
+    Button,
+    Table,
+    Form,
+    Select,
+    Input,
+    DatePicker,
+    InputNumber,
+    message,
+    Modal,
+    Upload,
+    Divider
+} from "antd";
 import {defaultFormItemLayout} from "../../../utils/formUtils";
 import ImgCrop from "antd-img-crop";
 import {connect} from "react-redux";
@@ -15,7 +30,7 @@ const columns = (operateFunc) => [{
     title: '战队头像',
     dataIndex: 'teamAvatar',
     key: 'teamAvatar',
-    render: value => value ? <img style={{width: '32px', height: '48px'}} src={getImgUrl(value)}/> : <div/>
+    render: value => value ? <img style={{height: '48px'}} src={getImgUrl(value)}/> : <div/>
 }, {
     title: '战队名称',
     dataIndex: 'teamName',
@@ -28,7 +43,7 @@ const columns = (operateFunc) => [{
     title: '导师头像',
     dataIndex: 'avatar',
     key: 'avatar',
-    render: value => value ? <img style={{width: '32px', height: '48px'}} src={getImgUrl(value)}/> : <div/>
+    render: value => value ? <img style={{ height: '48px'}} src={getImgUrl(value)}/> : <div/>
 }, {
     title: '战队口号',
     dataIndex: 'teamSlogan',
@@ -47,7 +62,7 @@ const contestantColumn = [{
     title: '选手头像',
     dataIndex: 'avatar',
     key: 'avatar',
-    render: value => value ? <img style={{width: '32px', height: '48px'}} src={getImgUrl(value)}/> : <div/>
+    render: value => value ? <img style={{height: '48px'}} src={getImgUrl(value)}/> : <div/>
 }, {
     title: '选手姓名',
     dataIndex: 'name',
@@ -186,40 +201,51 @@ const EditForm = ({visible, data, onCancel, submit}) => {
                     console.log('Validate Failed:', info);
                 });
             }}
-            width={"500px"}>
+            width={"1000px"}>
             <Form
                 {...defaultFormItemLayout}
                 form={form}
             >
-                <Form.Item name="teamName" label={"战队名称"} rules={[{
-                    required: true,
-                    message: '请输入战队名称!',
-                }]}>
-                    <Input placeholder="请输入"/>
-                </Form.Item>
-                <Form.Item name="teamAvatar" label={"战队头像"}>
-                    <CommonImgUpload uploadFunc={fileList => imgUploadFunc(fileList, setTeamImgFile)}
-                                     imgFile={teamImgFile}/>
-                </Form.Item>
-                <Form.Item name="name" label={"导师姓名"} rules={[{
-                    required: true,
-                    message: '请输入导师姓名!',
-                }]}>
-                    <Input placeholder="请输入"/>
-                </Form.Item>
-                <Form.Item name="avatar" label={"导师头像"}>
-                    <CommonImgUpload uploadFunc={fileList => imgUploadFunc(fileList, setTutorImgFile)}
-                                     imgFile={tutorImgFile}/>
-                </Form.Item>
-                <Form.Item name="teamSlogan" label={"参赛口号"}>
-                    <TextArea rows={2}/>
-                </Form.Item>
-                <Form.Item name="details" label={"导师信息描述"}>
-                    <TextArea rows={2}/>
-                </Form.Item>
-                <Form.Item name="teamDetails" label={"战队信息描述"}>
-                    <TextArea rows={2}/>
-                </Form.Item>
+                <Row gutter={20}>
+                    <Col span={11}>
+
+                        <Form.Item name="teamName" label={"战队名称"} rules={[{
+                            required: true,
+                            message: '请输入战队名称!',
+                        }]}>
+                            <Input placeholder="请输入"/>
+                        </Form.Item>
+                        <Form.Item name="teamAvatar" label={"战队头像"}>
+                            <CommonImgUpload uploadFunc={fileList => imgUploadFunc(fileList, setTeamImgFile)}
+                                             imgFile={teamImgFile}/>
+                        </Form.Item>
+                        <Form.Item name="teamDetails" label={"战队信息描述"}>
+                            <TextArea rows={4}/>
+                        </Form.Item>
+                        <Form.Item name="teamSlogan" label={"参赛口号"}>
+                            <TextArea rows={4}/>
+                        </Form.Item>
+                    </Col>
+                    <Col span={2}>
+                        <Divider type={"vertical"} style={{height:"100%"}}/>
+                    </Col>
+                    <Col span={11}>
+
+                        <Form.Item name="name" label={"导师姓名"} rules={[{
+                            required: true,
+                            message: '请输入导师姓名!',
+                        }]}>
+                            <Input placeholder="请输入"/>
+                        </Form.Item>
+                        <Form.Item name="avatar" label={"导师头像"}>
+                            <CommonImgUpload uploadFunc={fileList => imgUploadFunc(fileList, setTutorImgFile)}
+                                             imgFile={tutorImgFile}/>
+                        </Form.Item>
+                        <Form.Item name="details" label={"导师信息描述"}>
+                            <TextArea rows={4}/>
+                        </Form.Item>
+                    </Col>
+                </Row>
             </Form>
         </Modal>
     );

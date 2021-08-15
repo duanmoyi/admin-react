@@ -56,7 +56,8 @@ export default async function request(method, url, data, successFunc = () => {
         const response = await axios({
             method: method,
             url: url,
-            baseURL: "http://" + serverConfig.apiServerHost + ":" + serverConfig.apiServerPort,
+            // baseURL: "https://" + serverConfig.apiServerHost + ":" + serverConfig.apiServerPort,
+            baseURL: "https://" + serverConfig.apiServerHost,
             data: data ? data : {},
             headers: header,
             timeout: serverConfig.apiRequestTimeout

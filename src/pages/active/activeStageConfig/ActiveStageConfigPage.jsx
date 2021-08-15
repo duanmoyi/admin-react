@@ -1,5 +1,5 @@
 import React, {Component, useEffect, useState} from 'react';
-import {PlusOutlined} from "@ant-design/icons";
+import {ExclamationCircleOutlined, PlusOutlined} from "@ant-design/icons";
 import {
     Button,
     Col,
@@ -20,9 +20,11 @@ import {connect} from "react-redux";
 import moment from 'moment';
 import request from "../../../request/request";
 import {getImgUrl} from "../../../utils/core";
+import ActiveStageContestantPage from "./ActiveStageContestantPage";
 
 const {RangePicker} = DatePicker;
 const {TextArea} = Input
+const {confirm} = Modal;
 
 const stageResultColumns = [{
     title: '选手头像',
@@ -42,7 +44,7 @@ const rewardColumn = [{
     title: '图片',
     dataIndex: 'image',
     key: 'image',
-    render: value => value ? <img style={{width: '32px', height: '48px'}} src={getImgUrl(value)}/> : <div/>
+    render: value => value ? <img style={{height: '48px'}} src={getImgUrl(value)}/> : <div/>
     // <DefaultUserImgIcon style={{fontSize: '32px'}}/>
 }, {
     title: '名称',
@@ -259,6 +261,7 @@ const EditForm = ({data, visible, submit, onCancel}) => {
                         delete values.timeRange
                         if (data) {
                             values.rewards = data.rewards
+                            values.status = data.status
                             values.id = data.id
                             submit(values, 'edit');
                         } else {
@@ -462,7 +465,11 @@ class ActiveStageConfigPage extends Component {
         let id = this.state.selectRecord.id
         let result = await request("get", "/api/stages/" + id + "/rewards")
         this.setState({rewardDatas: (result && result._embedded && result._embedded.stageRewardConfigs) || []})
-        this.modalViewChange("premiumConfigVisible", true)
+        this.modalViewChange("configStageResultVisible", true)
+    }
+
+    toConfigResult = async () => {
+        this.modalViewChange("configStageResultVisible", true)
     }
 
     submitRewardConfig = (data) => {
@@ -472,11 +479,72 @@ class ActiveStageConfigPage extends Component {
     }
 
     startTicket = () => {
-
+        let startFunc = this.props.start
+        let recordId = this.state.selectRecord.id
+        let init = this.props.init
+        confirm({
+            title: '警告',
+            icon: <ExclamationCircleOutlined/>,
+            content: '确定要提前开启活动"' + this.state.selectRecord.name + '"? 这样做将会停止正在进行的活动，是否确认？',
+            onOk() {
+                confirm({
+                    title: '再次确认',
+                    icon: <ExclamationCircleOutlined/>,
+                    content: '再次确认开启？',
+                    async onOk() {
+                        await startFunc(recordId)
+                        init()
+                    },
+                });
+            },
+        });
     }
 
     stopTicket = () => {
+        let stopFunc = this.props.stop
+        let recordId = this.state.selectRecord.id
+        let init = this.props.init
+        confirm({
+            title: '警告',
+            icon: <ExclamationCircleOutlined/>,
+            content: '确定要停止活动"' + this.state.selectRecord.name + '"? 这样做将会关闭投票通道，是否确认？',
+            onOk() {
+                confirm({
+                    title: '再次确认',
+                    icon: <ExclamationCircleOutlined/>,
+                    content: '再次确认停止？',
+                    async onOk() {
+                        await stopFunc(recordId)
+                        init()
+                    },
+                });
+            },
+        });
+    }
 
+    raffle = () => {
+        let raffleFunc = this.props.startRaffle
+        let recordId = this.state.selectRecord.id
+        let init = this.props.init
+        confirm({
+            title: '提醒',
+            icon: <ExclamationCircleOutlined/>,
+            content: '确定开始抽奖？',
+            async onOk() {
+                await raffleFunc(recordId)
+                init()
+            },
+        });
+    }
+
+    configResult = async data => {
+        let stageId = this.state.selectRecord.id
+        await this.props.configResult({
+            stageId,
+            contestants: data
+        })
+        this.props.init()
+        this.modalViewChange("configStageResultVisible", false)
     }
 
     enableOperate = {
@@ -544,8 +612,7 @@ class ActiveStageConfigPage extends Component {
                                     <Button icon={<PlusOutlined/>}
                                             style={{marginBottom: '10px'}}
                                             type={"primary"}
-                                            onClick={() => {
-                                            }}>设定晋级人员</Button>
+                                            onClick={() => this.toConfigResult()}>设定晋级人员</Button>
                                 </Col> : <div/>}
                             {this.enableOperate.startLottery() ?
                                 <Col>
@@ -594,6 +661,10 @@ class ActiveStageConfigPage extends Component {
                 <StageResultView data={stageResultData}
                                  visible={this.state.modalVisibleState.stageResultVisible}
                                  onCancel={() => this.modalViewChange("stageResultVisible", false)}/>
+                <ActiveStageContestantPage visible={this.state.modalVisibleState.configStageResultVisible}
+                                           onCancel={() => this.modalViewChange("configStageResultVisible", false)}
+                                           submit={this.configResult}
+                                           configResult={this.state.selectRecord && this.state.selectRecord.result}/>
             </React.Fragment>
         );
     }
@@ -625,6 +696,10 @@ const mapDispatch = (dispatch) => ({
     /*停止*/
     stop: async (data) => {
         await dispatch.activeStageConfigModel.stop(data)
+    },
+    /*开始抽奖*/
+    startRaffle: async (data) => {
+        await dispatch.activeStageConfigModel.startRaffle(data)
     },
     /*设定结果*/
     configResult: async (data) => {
