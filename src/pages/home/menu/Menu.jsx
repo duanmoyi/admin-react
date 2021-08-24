@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import {connect} from "react-redux";
 import {Menu} from "antd";
 
@@ -6,11 +6,15 @@ const {SubMenu} = Menu;
 
 const CustomMenu = props => {
 
-    const [openKeys, setOpenKeys] = React.useState(['activeInfo']);
+    const [openKeys, setOpenKeys] = React.useState();
     let rootSubmenuKeys = []
 
+    useEffect(() => {
+        props.init()
+    }, [])
+
     const onOpenChange = keys => {
-        const latestOpenKey = keys.find(key => openKeys.indexOf(key) === -1);
+        const latestOpenKey = keys.find(key => (openKeys || [props.selectMenuData.parentMenuKey]).indexOf(key) === -1);
         if (rootSubmenuKeys.indexOf(latestOpenKey) === -1) {
             setOpenKeys(keys);
         } else {
@@ -50,7 +54,8 @@ const CustomMenu = props => {
         return menus
     }
 
-    return <Menu theme="dark" openKeys={openKeys} onOpenChange={onOpenChange} mode="inline" inlineIndent={18}
+    return <Menu theme="dark" openKeys={openKeys || [props.selectMenuData.parentMenuKey]}
+                 onOpenChange={onOpenChange} mode="inline" inlineIndent={18}
                  selectedKeys={props.selectMenuKey} onSelect={onSelect}>
         {menuMap(props.menus)}
     </Menu>

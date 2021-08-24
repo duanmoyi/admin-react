@@ -4,6 +4,7 @@ import './index.css';
 import ReactDOM from 'react-dom';
 import models from "./models";
 import {init} from "@rematch/core"
+import createLoadingPlugin from '@rematch/loading'
 import {Provider} from "react-redux"
 import {Router} from "@reach/router";
 import zh_CN from 'antd/lib/locale-provider/zh_CN'
@@ -14,8 +15,14 @@ import {ActiveRuleConfig, ActiveStageConfig, GiftConfig, GiftRecord, TicketRecor
 import {ContestantConfig, TeamConfig} from "./pages/tourn";
 import {SysConfig} from "./pages/sys";
 import {UserInfo} from "./pages/user";
+import RegisterInfo from "./pages/register/RegisterInfoPage";
 
-const store = init({models});
+const loadingPlugin = createLoadingPlugin({ asNumber: true })
+
+const store = init({
+    plugins: [loadingPlugin],
+    models,
+})
 
 message.config({
     maxCount:1
@@ -27,7 +34,7 @@ ReactDOM.render(
             <Router mode="hash">
                 <Login path="/login"/>
                 <Home path="/">
-                    <ActiveRuleConfig default/>
+                    {/*<ActiveRuleConfig default/>
                     <ActiveStageConfig path="/activeStageConfig"/>
                     <GiftConfig path="/giftConfig"/>
                     <GiftRecord path="/giftRecord"/>
@@ -35,7 +42,8 @@ ReactDOM.render(
                     <TeamConfig path="/teamConfig"/>
                     <SysConfig path="/sysConfig"/>
                     <UserInfo path="/userConfig"/>
-                    <ContestantConfig path="/contestantConfig"/>
+                    <ContestantConfig path="/contestantConfig"/>*/}
+                    <RegisterInfo path="/registerInfo" default/>
                 </Home>
             </Router>
         </ConfigProvider>

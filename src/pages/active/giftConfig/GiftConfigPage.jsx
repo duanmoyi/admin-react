@@ -1,10 +1,31 @@
 import React, {Component, useEffect, useState} from 'react';
 import {PlusOutlined} from "@ant-design/icons";
-import {Button, Col, Form, Input, InputNumber, message, Modal, Progress, Row, Select, Table, Tag, Tooltip} from "antd";
+import {
+    Button,
+    Col,
+    Form,
+    Input,
+    InputNumber,
+    message,
+    Modal,
+    Progress,
+    Row,
+    Select,
+    Spin,
+    Table,
+    Tag,
+    Tooltip
+} from "antd";
 import {defaultFormItemLayout} from "../../../utils/formUtils";
 import {connect} from "react-redux";
 import {Guid} from "js-guid";
-import {CommonImgUpload, getImgUrl} from "../../../utils/core";
+import {
+    CommonImgUpload, defaultSort,
+    getColumnInputSearchProps,
+    getColumnSelectSearchProps,
+    getImgUrl,
+    tableChange
+} from "../../../utils/core";
 import request from "../../../request/request";
 
 const {TextArea} = Input
@@ -13,28 +34,33 @@ const columns = (operateFunc) => [{
     title: '图片',
     dataIndex: 'image',
     key: 'image',
-    render: value => value ? <img style={{width: '32px', height: '48px'}} src={getImgUrl(value)}/> : <div/>
+    render: value => value ? <img style={{height: '48px'}} src={getImgUrl(value)}/> : <div/>
     // <DefaultUserImgIcon style={{fontSize: '32px'}}/>
 }, {
     title: '名称',
     dataIndex: 'name',
     key: 'name',
+    ...getColumnInputSearchProps("名称")
 }, {
-    title: '奖品类型',
+    title: '类型',
     dataIndex: 'type',
     key: 'type',
-    render: value => value === "虚拟奖品" ? <Tag color={"#F56955"}>{value}</Tag> : <Tag color={"#338c98"}>{value}</Tag>
+    render: value => value === "虚拟奖品" ? <Tag color={"#F56955"}>{value}</Tag> : <Tag color={"#338c98"}>{value}</Tag>,
+    ...getColumnSelectSearchProps("类型", [{
+        key: <Tag color={"#F56955"}>虚拟奖品</Tag>,
+        value: "虚拟奖品",
+    }, {key: <Tag color={"#338c98"}>实物奖品</Tag>, value: "实物奖品",}]),
 }, {
-    title: '消耗数量',
+    title: '数量',
     dataIndex: 'usedCount',
     key: 'usedCount',
     render: (value, record) =>
-        <Tooltip title={"已领取：" + value + "已发放：" + record.assignedCount + "库存：" + record.totalCount}>
+        <Tooltip title={"已领取：" + value + "； 已发放：" + record.assignedCount + "；   库存：" + record.totalCount}>
             <Progress width={"50px"} percent={100 * record.assignedCount / record.totalCount}
                       success={{percent: 100 * value / record.totalCount}}/>
         </Tooltip>
 }, {
-    title: '操作列表',
+    title: '操作',
     dataIndex: 'id',
     key: 'id',
     render: (value, record) => (record.type === "虚拟奖品" ?
@@ -248,72 +274,17 @@ const EditForm = ({visible, data, onCancel, submit}) => {
     );
 }
 
-const SearchForm = ({searchFormData, searchFunc}) => {
-    const [form] = Form.useForm()
-
-    useEffect(() => {
-        if (searchFormData) {
-            form.setFieldsValue(searchFormData)
-        } else {
-            form.resetFields()
-        }
-    })
-
-    const formItemLayout = {
-        labelCol: {
-            span: 5,
-        },
-        wrapperCol: {
-            span: 19,
-        },
-    };
-
-    return <Form form={form}{...formItemLayout} style={{marginTop: '10px'}}>
-        <Row gutter={20}>
-            <Col span={21}>
-                <Row gutter={20} justify={"start"}>
-                    <Col span={6}>
-                        <Form.Item name="name" label={"名称"}>
-                            <Input allowClear placeholder="请输入"/>
-                        </Form.Item>
-                    </Col>
-                    <Col span={6}>
-                        <Form.Item name="type" label={"奖品类型"}>
-                            <Select>
-                                <Select.Option value="虚拟奖品">虚拟奖品</Select.Option>
-                                <Select.Option value="实物奖品">实物奖品</Select.Option>
-                            </Select>
-                        </Form.Item>
-                    </Col>
-                </Row>
-            </Col>
-            <Col span={3} style={{
-                display: 'flex',
-                alignItems: 'flex-end',
-                justifyContent: 'flex-end',
-                paddingBottom: '25px',
-            }}>
-                <Button type="primary" onClick={() => searchFunc(form.getFieldsValue())}>
-                    查询
-                </Button>
-                <Button style={{margin: '0 8px'}} onClick={() => form.resetFields()}>
-                    重置
-                </Button>
-            </Col>
-        </Row>
-    </Form>
-}
-
 class GiftConfigPage extends Component {
 
     state = {
         loading: false,
         selectRecord: undefined,
-        modalVisibleState: {editVisible: false, giftListShowVisible: false}
+        modalVisibleState: {editVisible: false, giftListShowVisible: false},
+        searchData: {filter: [], sort: [defaultSort], page: this.props.page}
     }
 
     componentWillMount() {
-        this.props.init()
+        this.props.fetch(this.state.searchData)
     }
 
     modalViewChange = (modalStateKey, view) => {
@@ -328,13 +299,34 @@ class GiftConfigPage extends Component {
         this.setState({selectRecord: selectedRows[0]})
     }
 
+    filterConvert = filters => {
+        let result = []
+        for (let key in filters) {
+            if (!filters[key]) {
+                continue
+            }
+
+            let operate = "eq"
+            // switch (key) {
+            //     case "startTime":
+            //         operate = "gt"
+            //         break
+            //     case "endTime":
+            //         operate = "lt"
+            //         break
+            // }
+            result.push({field: key, value: filters[key], type: operate})
+        }
+        return result
+    }
+
     submit = async (data, mode) => {
+        this.modalViewChange("editVisible", false)
         if (mode === "edit") {
             await this.props.update(data)
         } else {
             await this.props.add(data)
         }
-        this.modalViewChange("editVisible", false)
         this.props.init()
     }
 
@@ -348,7 +340,7 @@ class GiftConfigPage extends Component {
                 ],
                 "expire": "2021-08-14T09:51:05.174Z",
             }
-            request("post", "/api/reward_ticket", data)
+            request("post", "api/reward_ticket", data)
         }
     }
 
@@ -362,20 +354,13 @@ class GiftConfigPage extends Component {
             <React.Fragment>
                 <div className="site-layout-background"
                      style={{
-                         paddingTop: "10px",
-                         marginLeft: '15px',
-                         marginRight: '15px',
-                         marginTop: '15px',
-                         height: '85vh'
+                         height: '90vh'
                      }}>
-                    <div style={{marginRight: '5px', paddingTop: '5px'}}>
-                        <SearchForm/>
-                    </div>
                     <div style={{marginBottom: '10px', marginLeft: '10px'}}>
                         <Row gutter={10}>
                             <Col>
                                 <Button type="primary" icon={<PlusOutlined/>}
-                                        style={{marginBottom: '10px'}}
+                                        style={{marginLeft: '10px', marginTop: '20px'}}
                                         onClick={() => {
                                             this.modalViewChange("editVisible", true)
                                             this.setState({selectRecord: undefined})
@@ -383,36 +368,48 @@ class GiftConfigPage extends Component {
                             </Col>
                             {this.enableOperate.edit() ? <Col>
                                 <Button icon={<PlusOutlined/>}
-                                        style={{marginBottom: '10px'}}
+                                        style={{marginLeft: '10px', marginTop: '20px'}}
                                         type="primary"
                                         onClick={() => this.modalViewChange("editVisible", true)}>编辑</Button>
                             </Col> : <div/>}
                             {this.enableOperate.importDetail() ? <Col>
                                 <Button icon={<PlusOutlined/>}
-                                        style={{marginBottom: '10px'}}
+                                        style={{marginLeft: '10px', marginTop: '20px'}}
                                         type="primary"
                                         onClick={this.importDetail}>导入奖品</Button>
                             </Col> : <div/>}
                         </Row>
                     </div>
-                    <Table style={{marginLeft: '10px'}} loading={this.state.loading}
-                           rowKey={"id"}
-                           rowSelection={{
-                               type: "radio",
-                               onChange: this.onChange,
-                               selectedRowKeys: (this.state.selectRecord && this.state.selectRecord.id) ? [this.state.selectRecord.id] : []
-                           }}
-                           onRow={
-                               record => ({
-                                   onClick: event => {
-                                       this.setState({selectRecord: record})
-                                   },
-                               })
-                           }
-                           columns={columns({
-                               showGiftList: () => this.modalViewChange("giftListShowVisible", true),
-                           })}
-                           dataSource={this.props.data}/>
+                    <Spin tip={"正在加载。。。"} spinning={this.props.initing > 0 || this.props.loading > 0}>
+                        <Table style={{margin: '20px 20px'}} loading={this.state.loading}
+                               rowKey={"id"}
+                               rowSelection={{
+                                   type: "radio",
+                                   onChange: this.onChange,
+                                   selectedRowKeys: (this.state.selectRecord && this.state.selectRecord.id) ? [this.state.selectRecord.id] : []
+                               }}
+                               onRow={
+                                   record => ({
+                                       onClick: event => {
+                                           if (this.state.selectRecord && this.state.selectRecord.id === record.id) {
+                                               this.setState({selectRecord: undefined})
+                                           } else
+                                               this.setState({selectRecord: record})
+                                       },
+                                   })
+                               }
+                               columns={columns({
+                                       showGiftList: () => this.modalViewChange("giftListShowVisible", true),
+                                       addFilter: () => {
+                                       },
+                                       clearFilter: () => {
+                                       },
+                                   }
+                               )}
+                               onChange={(pagination, filters, sorts, extra) => tableChange(pagination, this.filterConvert(filters), sorts, extra, this)}
+                               pagination={{...this.props.page}}
+                               dataSource={this.props.data}/>
+                    </Spin>
                 </div>
                 <GiftList onCancel={() => this.modalViewChange("giftListShowVisible", false)} data={giftListData}
                           visible={this.state.modalVisibleState.giftListShowVisible}/>
@@ -425,12 +422,14 @@ class GiftConfigPage extends Component {
 
 
 const mapState = (state, ownProps) => ({
-    data: state.rewardConfigModel.data,
+    ...state.rewardConfigModel,
+    initing: state.loading.effects.rewardConfigModel.init,
+    loading: state.loading.models.rewardConfigModel,
     ...ownProps
 })
 
 const mapDispatch = (dispatch) => ({
-    init: async (data) => {
+    fetch: async (data) => {
         await dispatch.rewardConfigModel.init(data)
     },
     /*编辑*/

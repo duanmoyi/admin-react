@@ -14,7 +14,7 @@ import {
     message,
     Modal,
     Upload,
-    Divider
+    Divider, Spin
 } from "antd";
 import {defaultFormItemLayout} from "../../../utils/formUtils";
 import ImgCrop from "antd-img-crop";
@@ -27,29 +27,29 @@ const {RangePicker} = DatePicker;
 const {TextArea} = Input
 
 const columns = (operateFunc) => [{
-    title: '战队头像',
+    title: '头像',
     dataIndex: 'teamAvatar',
     key: 'teamAvatar',
     render: value => value ? <img style={{height: '48px'}} src={getImgUrl(value)}/> : <div/>
 }, {
-    title: '战队名称',
+    title: '名称',
     dataIndex: 'teamName',
     key: 'teamName',
 }, {
-    title: '战队导师',
+    title: '导师姓名',
     dataIndex: 'name',
     key: 'name',
 }, {
     title: '导师头像',
     dataIndex: 'avatar',
     key: 'avatar',
-    render: value => value ? <img style={{ height: '48px'}} src={getImgUrl(value)}/> : <div/>
+    render: value => value ? <img style={{height: '48px'}} src={getImgUrl(value)}/> : <div/>
 }, {
-    title: '战队口号',
+    title: '口号',
     dataIndex: 'teamSlogan',
     key: 'teamSlogan',
 }, {
-    title: '操作列表',
+    title: '操作',
     dataIndex: 'id',
     key: 'id',
     render: (value, record) => <Row gutter={10}>
@@ -227,7 +227,7 @@ const EditForm = ({visible, data, onCancel, submit}) => {
                         </Form.Item>
                     </Col>
                     <Col span={2}>
-                        <Divider type={"vertical"} style={{height:"100%"}}/>
+                        <Divider type={"vertical"} style={{height: "100%"}}/>
                     </Col>
                     <Col span={11}>
 
@@ -295,33 +295,31 @@ class TeamConfigPage extends Component {
             <React.Fragment>
                 <div className="site-layout-background"
                      style={{
-                         paddingTop: "10px",
-                         marginLeft: '15px',
-                         marginRight: '15px',
-                         marginTop: '15px',
-                         height: '85vh'
+                         height: '90vh'
                      }}>
                     <div style={{marginBottom: '10px', marginLeft: '10px'}}>
                         <Button type="primary" icon={<PlusOutlined/>}
-                                style={{marginBottom: '10px', marginLeft: '10px'}}
+                                style={{marginLeft:'10px', marginTop:'20px'}}
                                 onClick={() => {
                                     this.modalViewChange("editVisible", true)
                                     this.setState({selectRecord: undefined})
                                 }}>添加</Button>
                     </div>
-                    <Table style={{marginLeft: '10px'}} loading={this.state.loading}
-                           onRow={
-                               record => ({
-                                   onClick: event => {
-                                       this.setState({selectRecord: record})
-                                   },
-                               })
-                           }
-                           columns={columns({
-                               editFunc: () => this.modalViewChange("editVisible", true),
-                               showContestants: this.viewContestantList,
-                           })}
-                           dataSource={this.props.data}/>
+                    <Spin tip={"正在加载。。。"} spinning={this.props.initing > 0 || this.props.loading > 0}>
+                        <Table style={{margin: '20px 20px'}} loading={this.state.loading}
+                               onRow={
+                                   record => ({
+                                       onClick: event => {
+                                           this.setState({selectRecord: record})
+                                       },
+                                   })
+                               }
+                               columns={columns({
+                                   editFunc: () => this.modalViewChange("editVisible", true),
+                                   showContestants: this.viewContestantList,
+                               })}
+                               dataSource={this.props.data}/>
+                    </Spin>
                 </div>
                 <ContestantList onCancel={() => this.modalViewChange("contestantViewVisible", false)}
                                 data={this.state.contestantData}
@@ -335,6 +333,8 @@ class TeamConfigPage extends Component {
 
 const mapState = (state, ownProps) => ({
     data: state.teamConfigModel.data,
+    initing: state.loading.effects.teamConfigModel.init,
+    loading: state.loading.models.teamConfigModel,
     ...ownProps
 })
 

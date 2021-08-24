@@ -2,8 +2,9 @@
   "serverPort": 53103,
   "defaultPageSize": 10,
   "maxPageSize": 10000000,
-  "apiServerHost": "www.duanmoyi.com",
-  "apiServerPort": 80,
+  "apiHost": "https://voting.uufish.com.cn",
   "apiRequestTimeout": 300000,
-  "resourceDir":"./picture/"
+  "resourceDir":"./picture/",
+  "registerHost": "https://voting.uufish.com.cn/register",
+  "registerWorkDir": "/usr/local/webserver/register"
 }

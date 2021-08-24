@@ -1,153 +1,83 @@
 import React, {Component, useEffect} from 'react';
-import {Button, Col, Form, Input, Row, Select, Table, Tag} from "antd";
+import {Button, Col, Form, Input, Row, Select, Spin, Table, Tag} from "antd";
+import {
+    defaultSort,
+    getColumnInputSearchProps,
+    getColumnTimeRangeSearchProps,
+    renderTime,
+    tableChange
+} from "../../../utils/core";
+import {connect} from "react-redux";
 
-const mockData = [{
-    username: "吴无物",
-    telephone: "17325458652",
-    activeName: "32晋16竞猜活动",
-    time: "2021-08-11 15:21:32",
-    ticketContestant: "肖杰",
-    ipaddress:"10.1.1.1"
-}, {
-    username: "吴无物",
-    telephone: "17325458652",
-    activeName: "32晋16竞猜活动",
-    time: "2021-08-11 15:21:32",
-    ticketContestant: "肖杰",
-    ipaddress:"10.1.1.1"
-},{
-    username: "吴无物",
-    telephone: "17325458652",
-    activeName: "32晋16竞猜活动",
-    time: "2021-08-11 15:21:32",
-    ticketContestant: "肖杰",
-    ipaddress:"10.1.1.1"
-},{
-    username: "吴无物",
-    telephone: "17325458652",
-    activeName: "32晋16竞猜活动",
-    time: "2021-08-11 15:21:32",
-    ticketContestant: "肖杰",
-    ipaddress:"10.1.1.1"
-},{
-    username: "吴无物",
-    telephone: "17325458652",
-    activeName: "32晋16竞猜活动",
-    time: "2021-08-11 15:21:32",
-    ticketContestant: "肖杰",
-    ipaddress:"10.1.1.1"
-},{
-    username: "吴无物",
-    telephone: "17325458652",
-    activeName: "32晋16竞猜活动",
-    time: "2021-08-11 15:21:32",
-    ticketContestant: "肖杰",
-    ipaddress:"10.1.1.1"
-},{
-    username: "吴无物",
-    telephone: "17325458652",
-    activeName: "32晋16竞猜活动",
-    time: "2021-08-11 15:21:32",
-    ticketContestant: "肖杰",
-    ipaddress:"10.1.1.1"
-},]
-
-const columns =  [{
+const columns = [{
     title: '用户名',
-    dataIndex: 'username',
-    key: 'username',
+    dataIndex: 'userNickName',
+    key: 'userNickName',
+    sorter: true,
+    ...getColumnInputSearchProps("用户")
 }, {
-    title: '用户手机号',
-    dataIndex: 'telephone',
-    key: 'telephone',
+    title: '手机号',
+    dataIndex: 'userPhoneName',
+    key: 'userPhoneName',
+    sorter: true,
+    ...getColumnInputSearchProps("手机号")
 }, {
-    title: '活动名称',
-    dataIndex: 'activeName',
-    key: 'activeName',
+    title: '选手',
+    dataIndex: 'contestantName',
+    key: 'contestantName',
+    sorter: true,
+    ...getColumnInputSearchProps("选手")
+
+}, {
+    title: '活动',
+    dataIndex: 'stageName',
+    key: 'stageName',
+    sorter: true,
+    ...getColumnInputSearchProps("活动")
 }, {
     title: '投票时间',
     dataIndex: 'time',
     key: 'time',
+    sorter: true,
+    render: renderTime,
+    ...getColumnTimeRangeSearchProps('投票时间')
 }, {
-    title: '用户IP',
-    dataIndex: 'ipaddress',
-    key: 'ipaddress',
+    title: '票数',
+    dataIndex: 'voteCount',
+    key: 'voteCount',
+    sorter: true,
 }, {
-    title: '投票选手',
-    dataIndex: 'ticketContestant',
-    key: 'ticketContestant',
-
+    title: 'IP',
+    dataIndex: 'userIp',
+    key: 'userIp',
+    ...getColumnInputSearchProps("IP")
 }]
-
-const SearchForm = ({searchFormData, searchFunc}) => {
-    const [form] = Form.useForm()
-
-    useEffect(() => {
-        if (searchFormData) {
-            form.setFieldsValue(searchFormData)
-        } else {
-            form.resetFields()
-        }
-    })
-
-    const formItemLayout = {
-        labelCol: {
-            span: 5,
-        },
-        wrapperCol: {
-            span: 19,
-        },
-    };
-
-    return <Form form={form}{...formItemLayout} style={{marginTop: '10px'}}>
-        <Row gutter={20}>
-            <Col span={21}>
-                <Row gutter={20} justify={"start"}>
-                    <Col span={6}>
-                        <Form.Item name="username" label={"用户名"}>
-                            <Input allowClear placeholder="请输入"/>
-                        </Form.Item>
-                    </Col>
-                    <Col span={6}>
-                        <Form.Item name="telephone" label={"用户手机号"}>
-                            <Input allowClear placeholder="请输入"/>
-                        </Form.Item>
-                    </Col>
-                    <Col span={6}>
-                        <Form.Item name="activeStage" label={"投票活动"}>
-                            <Select>
-                                <Select.Option value="virtual">32晋16竞猜活动</Select.Option>
-                                <Select.Option value="actual">16晋8竞猜活动</Select.Option>
-                            </Select>
-                        </Form.Item>
-                    </Col>
-                    <Col span={6}>
-                        <Form.Item name="ticketContestant" label={"选手姓名"}>
-                            <Input allowClear placeholder="请输入"/>
-                        </Form.Item>
-                    </Col>
-                </Row>
-            </Col>
-            <Col span={3} style={{
-                display: 'flex',
-                alignItems: 'flex-end',
-                justifyContent: 'flex-end',
-                paddingBottom: '25px',
-            }}>
-                <Button type="primary" onClick={() => searchFunc(form.getFieldsValue())}>
-                    查询
-                </Button>
-                <Button style={{margin: '0 8px'}} onClick={() => form.resetFields()}>
-                    重置
-                </Button>
-            </Col>
-        </Row>
-    </Form>
-}
 
 class TicketRecordPage extends Component {
     state = {
         loading: false,
+        searchData: {filter: [], sort: [defaultSort], page: this.props.page}
+    }
+
+    componentWillMount() {
+        this.props.fetch(this.state.searchData)
+    }
+
+    filterConvert = filters => {
+        let result = []
+        for (let key in filters) {
+            if (!filters[key]) {
+                continue
+            }
+
+            let operate = "eq"
+            switch (key) {
+                case "time":
+                    operate = "timeRange"
+            }
+            result.push({field: key, value: filters[key], type: operate})
+        }
+        return result
     }
 
     render() {
@@ -155,22 +85,31 @@ class TicketRecordPage extends Component {
             <React.Fragment>
                 <div className="site-layout-background"
                      style={{
-                         paddingTop: "10px",
-                         marginLeft: '15px',
-                         marginRight: '15px',
-                         marginTop: '15px',
-                         height: '85vh'
+                         height: '90vh'
                      }}>
-                    <div style={{marginRight: '5px', paddingTop: '5px'}}>
-                        <SearchForm/>
-                    </div>
-                    <Table style={{marginLeft: '10px'}} loading={this.state.loading}
-                           columns={columns}
-                           dataSource={mockData}/>
+                    <Spin tip={"正在加载。。。"} spinning={this.props.initing > 0 || this.props.loading > 0}>
+                        <Table style={{padding: '50px 30px'}} bordered loading={this.state.loading}
+                               columns={columns}
+                               dataSource={this.props.data}
+                               onChange={(pagination, filters, sorts, extra) => tableChange(pagination, this.filterConvert(filters), sorts, extra, this)}
+                               pagination={{...this.props.page}}/>
+                    </Spin>
                 </div>
             </React.Fragment>
         );
     }
 }
 
-export default TicketRecordPage;
+const mapState = (state, ownProps) => ({
+    ...state.ticketRecordConfig,
+    initing: state.loading.effects.ticketRecordConfig.init,
+    loading: state.loading.models.ticketRecordConfig,
+    ...ownProps
+})
+
+const mapDispatch = (dispatch) => ({
+    fetch: async (data) => {
+        await dispatch.ticketRecordConfig.init(data)
+    },
+})
+export default connect(mapState, mapDispatch)(TicketRecordPage);

@@ -13,8 +13,8 @@ export default  {
     },
     effects: (dispatch) => ({
         async init(payload, rootState) {
-            let result = await tableFetch(payload, "api/exchange_records", "exchange_records")
-            dispatch.rewardRecordConfig.updateData(result)
+            let result = await tableFetch(payload, "api/user_info", "userInfoes")
+            dispatch.userInfoConfig.updateData(result)
         },
     })
 }

@@ -1,54 +1,16 @@
 import React, {Component, useEffect} from 'react';
-import {Button, Col, Form, Input, Modal, Row, Select, Table, Tag, Upload} from "antd";
+import {Button, Col, Form, Input, Modal, Row, Select, Spin, Table, Tag, Upload} from "antd";
 import {PlusOutlined} from "@ant-design/icons";
 import {defaultFormItemLayout} from "../../../utils/formUtils";
 import ImgCrop from "antd-img-crop";
-
-const mockData = [{
-    username: "吴无物",
-    telephone: "17325458652",
-    giftName: "wyb签名笔记本",
-    giftCategory: "实物奖品",
-    activeStageName: "32晋16竞猜活动",
-    receiveStatus: "已领取",
-    receiveTime: "2021-08-11 15:21:32",
-    expressStatus: "已发货",
-    expressTime: "2021-08-12 15:21:32",
-    expressCode: "SF236688422365655"
-}, {
-    username: "赵昭昭",
-    telephone: "17325458652",
-    giftName: "优酷白金会员半年卡",
-    giftCategory: "虚拟奖品",
-    activeStageName: "32晋16竞猜活动",
-    receiveStatus: "已领取",
-    receiveTime: "2021-08-11 15:21:32",
-}, {
-    username: "吴无物",
-    telephone: "17325458652",
-    giftName: "wyb签名笔记本",
-    giftCategory: "实物奖品",
-    activeStageName: "32晋16竞猜活动",
-    receiveStatus: "未领取",
-}, {
-    username: "吴无物",
-    telephone: "17325458652",
-    giftName: "wyb签名笔记本",
-    giftCategory: "实物奖品",
-    activeStageName: "32晋16竞猜活动",
-    receiveStatus: "已领取",
-    receiveTime: "2021-08-11 15:21:32",
-    expressStatus: "未发货",
-}, {
-    username: "吴无物",
-    telephone: "17325458652",
-    giftName: "wyb签名笔记本",
-    giftCategory: "实物奖品",
-    activeStageName: "32晋16竞猜活动",
-    receiveStatus: "已领取",
-    receiveTime: "2021-08-11 15:21:32",
-    expressStatus: "未发货",
-}]
+import {
+    defaultSort,
+    getColumnDateTimeSearchProps,
+    getColumnInputSearchProps,
+    getColumnSelectSearchProps,
+    getColumnTimeRangeSearchProps, tableChange
+} from "../../../utils/core";
+import {connect} from "react-redux";
 
 const getExpressStatus = record => {
     let giftCategory = record.giftCategory
@@ -64,133 +26,84 @@ const getExpressStatus = record => {
 }
 
 const columns = (operateFunc) => [{
-    title: '获奖用户',
+    title: '用户',
     dataIndex: 'username',
     key: 'username',
+    sorter: true,
+    ...getColumnInputSearchProps("用户")
 }, {
-    title: '用户手机号',
+    title: '手机号',
     dataIndex: 'telephone',
     key: 'telephone',
+    sorter: true,
+    ...getColumnInputSearchProps("手机号")
 }, {
-    title: '奖品名称',
+    title: '名称',
     dataIndex: 'giftName',
     key: 'giftName',
+    sorter: true,
+    ...getColumnInputSearchProps("名称")
 }, {
-    title: '奖品类型',
+    title: '类型',
     dataIndex: 'giftCategory',
     key: 'giftCategory',
+    sorter: true,
+    ...getColumnSelectSearchProps("类型", [{
+        key: "实物奖品",
+        value: "实物奖品",
+    }, {key: "虚拟奖品", value: "虚拟奖品",}]),
 }, {
-    title: '获奖活动',
+    title: '活动',
     dataIndex: 'activeStageName',
     key: 'activeStageName',
+    sorter: true,
+    ...getColumnInputSearchProps("活动")
 }, {
     title: '领取状态',
     dataIndex: 'receiveStatus',
     key: 'receiveStatus',
     render: (value, record) => value === "已领取" ? <Tag color={"#0a5d1c"}>{value}</Tag> :
-        <Tag color={"#e596a8"}>{value}</Tag>
+        <Tag color={"#e596a8"}>{value}</Tag>,
+    sorter: true,
+    ...getColumnSelectSearchProps("领取状态", [{
+        key: <Tag color={"#e596a8"}>未领取</Tag>,
+        value: "未领取",
+    }, {key: <Tag color={"#0a5d1c"}>已领取</Tag>, value: "已领取",}]),
 }, {
     title: '领取时间',
     dataIndex: 'receiveTime',
     key: 'receiveTime',
+    sorter: true,
+    ...getColumnTimeRangeSearchProps('领取时间')
 }, {
     title: '发货状态',
     dataIndex: 'expressStatus',
     key: 'expressStatus',
-    render: (value, record) => getExpressStatus(record)
+    render: (value, record) => getExpressStatus(record),
+    sorter: true,
+    ...getColumnSelectSearchProps("发货状态", [{
+        key: <Tag color={"#515d1b"}>待发货</Tag>,
+        value: "待发货",
+    }, {key: <Tag color={"#9ddb8c"}>已发货</Tag>, value: "已发货",}]),
 }, {
     title: '发货时间',
     dataIndex: 'expressTime',
     key: 'expressTime',
+    sorter: true,
+    ...getColumnTimeRangeSearchProps('发货时间')
 }, {
     title: '物流单号',
     dataIndex: 'expressCode',
     key: 'expressCode',
+    ...getColumnInputSearchProps("物流单号")
 }, {
-    title: '操作列表',
+    title: '操作',
     dataIndex: 'id',
     key: 'id',
     render: (value, record) => record.giftCategory === "实物奖品" && record.expressStatus === "未发货" ?
         <a onClick={() => operateFunc.expressFunc(record)}>去发货</a> : <div/>
 
 }]
-
-const SearchForm = ({searchFormData, searchFunc}) => {
-    const [form] = Form.useForm()
-
-    useEffect(() => {
-        if (searchFormData) {
-            form.setFieldsValue(searchFormData)
-        } else {
-            form.resetFields()
-        }
-    })
-
-    const formItemLayout = {
-        labelCol: {
-            span: 5,
-        },
-        wrapperCol: {
-            span: 19,
-        },
-    };
-
-    return <Form form={form}{...formItemLayout} style={{marginTop: '10px'}}>
-        <Row gutter={20}>
-            <Col span={21}>
-                <Row gutter={20} justify={"start"}>
-                    <Col span={6}>
-                        <Form.Item name="username" label={"用户名"}>
-                            <Input allowClear placeholder="请输入"/>
-                        </Form.Item>
-                    </Col>
-                    <Col span={6}>
-                        <Form.Item name="telephone" label={"用户手机号"}>
-                            <Input allowClear placeholder="请输入"/>
-                        </Form.Item>
-                    </Col>
-                    <Col span={6}>
-                        <Form.Item name="category" label={"奖品类型"}>
-                            <Select>
-                                <Select.Option value="virtual">虚拟奖品</Select.Option>
-                                <Select.Option value="actual">实物奖品</Select.Option>
-                            </Select>
-                        </Form.Item>
-                    </Col>
-                    <Col span={6}>
-                        <Form.Item name="receiveStatus" label={"领取状态"}>
-                            <Select>
-                                <Select.Option value="virtual">已领取</Select.Option>
-                                <Select.Option value="actual">未领取</Select.Option>
-                            </Select>
-                        </Form.Item>
-                    </Col>
-                    <Col span={6}>
-                        <Form.Item name="expressStatus" label={"发货状态"}>
-                            <Select>
-                                <Select.Option value="virtual">已发货</Select.Option>
-                                <Select.Option value="actual">未发货</Select.Option>
-                            </Select>
-                        </Form.Item>
-                    </Col>
-                </Row>
-            </Col>
-            <Col span={3} style={{
-                display: 'flex',
-                alignItems: 'flex-end',
-                justifyContent: 'flex-end',
-                paddingBottom: '25px',
-            }}>
-                <Button type="primary" onClick={() => searchFunc(form.getFieldsValue())}>
-                    查询
-                </Button>
-                <Button style={{margin: '0 8px'}} onClick={() => form.resetFields()}>
-                    重置
-                </Button>
-            </Col>
-        </Row>
-    </Form>
-}
 
 const ExpressForm = ({visible, data, onCancel, submit}) => {
     const [form] = Form.useForm()
@@ -237,7 +150,8 @@ const ExpressForm = ({visible, data, onCancel, submit}) => {
 class GiftRecordPage extends Component {
     state = {
         loading: false,
-        modalVisibleState: {expressVisible: false}
+        modalVisibleState: {expressVisible: false},
+        searchData: {filter: [], sort: [defaultSort], page: this.props.page}
     }
 
     modalViewChange = (modalStateKey, view) => {
@@ -248,8 +162,30 @@ class GiftRecordPage extends Component {
         })
     }
 
+    componentWillMount() {
+        this.props.fetch(this.state.searchData)
+    }
+
     express = (data) => {
 
+    }
+
+    filterConvert = filters => {
+        let result = []
+        for (let key in filters) {
+            if (!filters[key]) {
+                continue
+            }
+
+            let operate = "eq"
+            switch (key) {
+                case "receiveTime":
+                case "expressTime":
+                    operate = "timeRange"
+            }
+            result.push({field: key, value: filters[key], type: operate})
+        }
+        return result
     }
 
     render() {
@@ -257,20 +193,18 @@ class GiftRecordPage extends Component {
             <React.Fragment>
                 <div className="site-layout-background"
                      style={{
-                         paddingTop: "10px",
-                         marginLeft: '15px',
-                         marginRight: '15px',
-                         marginTop: '15px',
-                         height: '85vh'
+                         height: this.props.height || '90vh'
                      }}>
-                    <div style={{marginRight: '5px', paddingTop: '5px'}}>
-                        <SearchForm/>
-                    </div>
-                    <Table style={{marginLeft: '10px'}} loading={this.state.loading}
-                           columns={columns({
-                               expressFunc: () => this.modalViewChange("expressVisible", true)
-                           })}
-                           dataSource={mockData}/>
+                    <Spin tip={"正在加载。。。"} spinning={this.props.initing > 0 || this.props.loading > 0}>
+                        <Table style={{padding: '50px 30px'}} bordered loading={this.state.loading}
+                               size={"middle"}
+                               columns={columns({
+                                   expressFunc: () => this.modalViewChange("expressVisible", true),
+                               })}
+                               dataSource={this.props.data}
+                               onChange={(pagination, filters, sorts, extra) => tableChange(pagination, this.filterConvert(filters), sorts, extra, this)}
+                               pagination={{...this.props.page}}/>
+                    </Spin>
                 </div>
                 <ExpressForm visible={this.state.modalVisibleState.expressVisible} data={[]}
                              onCancel={() => this.modalViewChange("expressVisible", false)} submit={this.express}/>
@@ -279,4 +213,16 @@ class GiftRecordPage extends Component {
     }
 }
 
-export default GiftRecordPage;
+const mapState = (state, ownProps) => ({
+    ...state.rewardRecordConfig,
+    initing: state.loading.effects.rewardRecordConfig.init,
+    loading: state.loading.models.rewardRecordConfig,
+    ...ownProps
+})
+
+const mapDispatch = (dispatch) => ({
+    fetch: async (data) => {
+        await dispatch.rewardRecordConfig.init(data)
+    },
+})
+export default connect(mapState, mapDispatch)(GiftRecordPage);

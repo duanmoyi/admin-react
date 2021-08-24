@@ -10,7 +10,7 @@ import {
     message,
     Modal, Progress,
     Row,
-    Select,
+    Select, Spin,
     Table,
     Tag,
     Tooltip
@@ -19,8 +19,16 @@ import GiftRecordPage from "../giftRecord";
 import {connect} from "react-redux";
 import moment from 'moment';
 import request from "../../../request/request";
-import {getImgUrl} from "../../../utils/core";
+import {
+    CommonImgUpload,
+    defaultSort,
+    getColumnDateTimeSearchProps,
+    getColumnInputSearchProps,
+    getColumnSelectSearchProps,
+    getImgUrl, imgUploadFunc, renderTime, setImg, tableChange
+} from "../../../utils/core";
 import ActiveStageContestantPage from "./ActiveStageContestantPage";
+import {Guid} from "js-guid";
 
 const {RangePicker} = DatePicker;
 const {TextArea} = Input
@@ -40,27 +48,26 @@ const stageResultColumns = [{
     key: 'teamName',
 },]
 
-const rewardColumn = [{
+const rewardColumn = (data) => [{
     title: '图片',
     dataIndex: 'image',
     key: 'image',
     render: value => value ? <img style={{height: '48px'}} src={getImgUrl(value)}/> : <div/>
-    // <DefaultUserImgIcon style={{fontSize: '32px'}}/>
 }, {
     title: '名称',
     dataIndex: 'name',
     key: 'name',
 }, {
-    title: '奖品类型',
+    title: '类型',
     dataIndex: 'type',
     key: 'type',
     render: value => value === "虚拟奖品" ? <Tag color={"#F56955"}>{value}</Tag> : <Tag color={"#338c98"}>{value}</Tag>
 }, {
-    title: '消耗数量',
+    title: '数量',
     dataIndex: 'usedCount',
     key: 'usedCount',
     render: (value, record) =>
-        <Tooltip title={"已领取：" + value + "已发放：" + record.assignedCount + "库存：" + record.totalCount}>
+        <Tooltip title={"已领取：" + value + "； 已发放：" + record.assignedCount + "； 库存：" + record.totalCount}>
             <Progress width={"50px"} percent={100 * record.assignedCount / record.totalCount}
                       success={{percent: 100 * value / record.totalCount}}/>
         </Tooltip>
@@ -81,9 +88,10 @@ const rewardColumn = [{
                 },
             ]}
         >
-            <InputNumber onChange={(data) => record.rewardCount = data} value={record.rewardCount}
-                         defaultValue={record.rewardCount || 0} min={0} max={record.totalCount - record.assignedCount}
-                         placeholder="请输入"/>
+            <InputNumber onChange={(data) => record.rewardCount = data}
+                         value={record.rewardCount || 0}
+                         defaultValue={data.filter(m => m.id === record.id).length > 0 ? data.filter(m => m.id === record.id)[0].rewardCount : 0}
+                         min={0} max={record.totalCount - record.assignedCount} placeholder="请输入"/>
         </Form.Item>
     )
 },]
@@ -124,126 +132,71 @@ const rewardDatas = [{
     count: 500
 }]
 
-const preminumList = [{
-    id: 1,
-    name: "优酷白金会员月卡",
-}, {
-    id: 2,
-    name: "wyb签名笔记本",
-}, {
-    id: 3,
-    name: "饿了么超级会员年卡",
-}, {
-    id: 4,
-    name: "淘票票满99减98电影券",
-}, {
-    id: 5,
-    name: "网易云黑金会员年卡",
-}]
-
 const columns = (operateFunc) => [{
     title: '名称',
     dataIndex: 'name',
     key: 'name',
+    sorter: true,
+    ...getColumnInputSearchProps("名称")
 }, {
     title: '开始时间',
     dataIndex: 'startTime',
     key: 'startTime',
+    sorter: true,
+    render: renderTime,
+    ...getColumnDateTimeSearchProps('开始时间')
 }, {
     title: '结束时间',
     dataIndex: 'endTime',
     key: 'endTime',
+    sorter: true,
+    render: renderTime,
+    ...getColumnDateTimeSearchProps('结束时间')
 }, {
-    title: '投票权益:选票',
+    title: '每票里程数',
     dataIndex: 'ticketExchangeRate',
     key: 'ticketExchangeRate',
-    render: value => value + ":1"
+    sorter: true,
 }, {
     title: '当前状态',
     dataIndex: 'status',
     key: 'status',
+    ...getColumnSelectSearchProps("状态", [{
+        key: "正在进行",
+        value: "正在进行",
+    }, {key: "未开始", value: "未开始",}, {key: "已结束", value: "已结束",}]),
+    sorter: true,
     render: value => value ? value === "正在进行" ? <Tag color="#87d068">{value}</Tag> : value === "未开始" ?
         <Tag color="#023214">{value}</Tag> : <Tag color="#f50">{value}</Tag> : <div/>
 }, {
     title: '比赛结果',
     dataIndex: 'id',
     key: 'id',
-    render: (value, record) => record.status === "已结束" ? <a onClick={operateFunc.viewStageResult}>点击查看</a> : <div/>
+    render: (value, record) => record.status === "已结束" ?
+        <a onClick={() => operateFunc.viewStageResult(value, record)}>点击查看</a> : <div/>
 }, {
     title: '获奖记录',
     dataIndex: 'id',
     key: 'id',
-    render: value => <a onClick={operateFunc.viewRewardRecord}>点击查看</a>
+    render: (value, record) => <a onClick={() => operateFunc.viewRewardRecord(value, record)}>点击查看</a>
 }]
-
-const SearchForm = ({searchFormData, searchFunc}) => {
-    const [form] = Form.useForm()
-
-    useEffect(() => {
-        if (searchFormData) {
-            form.setFieldsValue(searchFormData)
-        } else {
-            form.resetFields()
-        }
-    })
-
-    const formItemLayout = {
-        labelCol: {
-            span: 5,
-        },
-        wrapperCol: {
-            span: 19,
-        },
-    };
-
-    return <Form form={form}{...formItemLayout} style={{marginTop: '10px'}}>
-        <Row gutter={20}>
-            <Col span={21}>
-                <Row gutter={20} justify={"start"}>
-                    <Col span={6}>
-                        <Form.Item name="name" label={"名称"}>
-                            <Input allowClear placeholder="请输入"/>
-                        </Form.Item>
-                    </Col>
-                    <Col span={6}>
-                        <Form.Item name="name" label={"状态"}>
-                            <Select>
-                                <Select.Option value="waitStart">未开始</Select.Option>
-                                <Select.Option value="starting">正在进行</Select.Option>
-                                <Select.Option value="stoped">已结束</Select.Option>
-                            </Select>
-                        </Form.Item>
-                    </Col>
-                </Row>
-            </Col>
-            <Col span={3} style={{
-                display: 'flex',
-                alignItems: 'flex-end',
-                justifyContent: 'flex-end',
-                paddingBottom: '25px',
-            }}>
-                <Button type="primary" onClick={() => searchFunc(form.getFieldsValue())}>
-                    查询
-                </Button>
-                <Button style={{margin: '0 8px'}} onClick={() => form.resetFields()}>
-                    重置
-                </Button>
-            </Col>
-        </Row>
-    </Form>
-}
 
 const EditForm = ({data, visible, submit, onCancel}) => {
     const [form] = Form.useForm()
+    const [homeTitleImg, setHomeTitleImg] = useState([])
+    const [orderTitleImg, setOrderTitleImg] = useState([])
 
     useEffect(() => {
         if (data) {
             data.timeRange = [moment(data.startTime, 'YYYY-MM-DDTHH:mm:ss').utcOffset(480, true), moment(data.endTime, 'YYYY-MM-DDTHH:mm:ss').utcOffset(480, true)]
+            setImg(data.backgroundImg, setHomeTitleImg)
+            setImg(data.backgroundImg, setOrderTitleImg)
             form.setFieldsValue(data)
         } else {
             form.resetFields()
         }
     },)
+
 
     return (
         <Modal
@@ -261,11 +214,14 @@ const EditForm = ({data, visible, submit, onCancel}) => {
                         delete values.timeRange
                         if (data) {
                             values.rewards = data.rewards
+                            if (!values.ticketExchangeRate) {
+                                values.ticketExchangeRate = data.ticketExchangeRate
+                            }
                             values.status = data.status
                             values.id = data.id
-                            submit(values, 'edit');
+                            return submit(values, 'edit');
                         } else {
-                            submit(values, 'add');
+                            return submit(values, 'add');
                         }
                     }).catch((info) => {
                     console.log('Validate Failed:', info);
@@ -289,14 +245,24 @@ const EditForm = ({data, visible, submit, onCancel}) => {
                 }]}>
                     <Input placeholder="请输入"/>
                 </Form.Item>
-                <Form.Item name="ticketExchangeRate" label={"每一票权益"} rules={[{
+                {(!data || data.status === "未开始") ?
+                    <Form.Item name="ticketExchangeRate" label={"每票里程数"} rules={[{
+                        required: true,
+                        message: '请设置每票里程数!',
+                    }]}>
+                        <InputNumber min={1}/>
+                    </Form.Item> : <div/>}
+                <Form.Item name="timeRange" label={"活动时间"} rules={[{
                     required: true,
-                    message: '请设置投票消耗权益数量!',
+                    message: '请输入活动时间!',
                 }]}>
-                    <InputNumber min={1}/>
-                </Form.Item>
-                <Form.Item name="timeRange" label={"活动时间"}>
                     <RangePicker showTime format={"YYYY-MM-DD HH:mm:ss"} allowClear placeholder={["开始时间", "结束时间"]}/>
+                </Form.Item>
+                <Form.Item name="entranceImage" label={"首页标题图片"}>
+                    <CommonImgUpload uploadFunc={imgUploadFunc(setHomeTitleImg)} imgFile={homeTitleImg}/>
+                </Form.Item>
+                <Form.Item name="rankImage" label={"人气榜标题图片"}>
+                    <CommonImgUpload uploadFunc={imgUploadFunc(setOrderTitleImg)} imgFile={orderTitleImg}/>
                 </Form.Item>
                 <Form.Item name="remark" label={"备注"}>
                     <TextArea rows={2}/>
@@ -347,7 +313,9 @@ const GiftRecord = ({data, visible, onCancel}) => {
         footer={null}
         onCancel={onCancel}
         width={"1500px"}>
-        <GiftRecordPage id={data}/>
+        <div style={{marginTop: '-50px'}}>
+            <GiftRecordPage stageId={data} height={"73vh"}/>
+        </div>
     </Modal>
 }
 
@@ -359,24 +327,13 @@ const RewardConfig = (props) => {
 
     useEffect(() => {
         if (props.rewardList) {
-            let rewardList = []
-            let data = props.data || []
-            props.rewardList.forEach(m => {
-                let match = data.filter(n => n.id === m.id)
-                if (match.length > 0) {
-                    m.rewardCount = match[0].rewardCount
-                } else {
-                    m.rewardCount = 0
-                }
-                rewardList.push(m)
-            })
+            let data = props.data.data || []
 
-            setSelectRowKeys(props.data.filter(m => m.count > 0).map(m => m.id))
-            setSelectedRows(props.data.filter(m => m.count > 0))
-            setRewardList(rewardList)
-            setData(props.data)
+            setSelectRowKeys(data.filter(m => m.count > 0).map(m => m.id))
+            setSelectedRows(data.filter(m => m.count > 0))
+            setData(data)
         }
-    }, [props.data, props.rewardList],)
+    }, [props.data.sequence, props.rewardList],)
 
     const submit = () => {
         if (!selectedRows || selectedRows.length < 1) {
@@ -414,29 +371,61 @@ const RewardConfig = (props) => {
             }}
             rowClassName={() => 'editable-row'}
             bordered
-            dataSource={rewardList}
-            columns={rewardColumn}
+            dataSource={props.rewardList}
+            columns={rewardColumn(props.data.data)}
         />
     </Modal>
 }
 
 class ActiveStageConfigPage extends Component {
 
-    componentWillMount() {
-        this.props.init()
-    }
+    defaultSearchData = {filter: [], sort: [defaultSort], page: this.props.page}
 
     state = {
-        loading: false,
-        selectRecord: undefined,
-        rewardDatas: [],
+        rewardDatas: {sequence: Guid.newGuid(), data: []},
         modalVisibleState: {
             editVisible: false,
             premiumConfigVisible: false,
             premiumShowVisible: false,
             giftRecordVisible: false,
             stageResultVisible: false,
+        },
+        searchData: this.defaultSearchData
+    }
+
+    init = () => {
+        this.setState({searchData: this.defaultSearchData, selectRecord: undefined})
+        this.props.fetch(this.defaultSearchData)
+    }
+
+    fetch = () => {
+        this.setState({selectRecord: undefined})
+        this.props.fetch(this.state.searchData)
+    }
+
+    componentWillMount() {
+        this.fetch()
+    }
+
+    filterConvert = filters => {
+        let result = []
+        for (let key in filters) {
+            if (!filters[key] || filters[key].length < 1) {
+                continue
+            }
+
+            let operate = "eq"
+            switch (key) {
+                case "startTime":
+                    operate = "lt"
+                    break
+                case "endTime":
+                    operate = "gt"
+                    break
+            }
+            result.push({field: key, value: filters[key][0], type: operate})
         }
+        return result
     }
 
     modalViewChange = (modalStateKey, view) => {
@@ -452,20 +441,25 @@ class ActiveStageConfigPage extends Component {
     }
 
     submit = async (data, mode) => {
+        this.modalViewChange("editVisible", false)
         if (mode === "edit") {
             await this.props.update(data)
         } else {
             await this.props.add(data)
         }
-        this.modalViewChange("editVisible", false)
-        this.props.init()
+        this.init()
     }
 
     toRewardConfig = async () => {
         let id = this.state.selectRecord.id
-        let result = await request("get", "/api/stages/" + id + "/rewards")
-        this.setState({rewardDatas: (result && result._embedded && result._embedded.stageRewardConfigs) || []})
-        this.modalViewChange("configStageResultVisible", true)
+        let result = await request("get", "api/stages/" + id + "/rewards")
+        this.setState({
+            rewardDatas: {
+                data: (result && result._embedded && result._embedded.stageRewardConfigs) || [],
+                sequence: Guid.newGuid()
+            }
+        })
+        this.modalViewChange("premiumConfigVisible", true)
     }
 
     toConfigResult = async () => {
@@ -481,7 +475,7 @@ class ActiveStageConfigPage extends Component {
     startTicket = () => {
         let startFunc = this.props.start
         let recordId = this.state.selectRecord.id
-        let init = this.props.init
+        let init = this.init
         confirm({
             title: '警告',
             icon: <ExclamationCircleOutlined/>,
@@ -493,7 +487,7 @@ class ActiveStageConfigPage extends Component {
                     content: '再次确认开启？',
                     async onOk() {
                         await startFunc(recordId)
-                        init()
+                        return init()
                     },
                 });
             },
@@ -503,7 +497,7 @@ class ActiveStageConfigPage extends Component {
     stopTicket = () => {
         let stopFunc = this.props.stop
         let recordId = this.state.selectRecord.id
-        let init = this.props.init
+        let init = this.init
         confirm({
             title: '警告',
             icon: <ExclamationCircleOutlined/>,
@@ -515,7 +509,7 @@ class ActiveStageConfigPage extends Component {
                     content: '再次确认停止？',
                     async onOk() {
                         await stopFunc(recordId)
-                        init()
+                        return init()
                     },
                 });
             },
@@ -525,7 +519,7 @@ class ActiveStageConfigPage extends Component {
     raffle = () => {
         let raffleFunc = this.props.startRaffle
         let recordId = this.state.selectRecord.id
-        let init = this.props.init
+        let init = this.init
         confirm({
             title: '提醒',
             icon: <ExclamationCircleOutlined/>,
@@ -538,13 +532,13 @@ class ActiveStageConfigPage extends Component {
     }
 
     configResult = async data => {
+        this.modalViewChange("configStageResultVisible", false)
         let stageId = this.state.selectRecord.id
         await this.props.configResult({
             stageId,
             contestants: data
         })
-        this.props.init()
-        this.modalViewChange("configStageResultVisible", false)
+        this.init()
     }
 
     enableOperate = {
@@ -561,20 +555,13 @@ class ActiveStageConfigPage extends Component {
             <React.Fragment>
                 <div className="site-layout-background"
                      style={{
-                         paddingTop: "10px",
-                         marginLeft: '15px',
-                         marginRight: '15px',
-                         marginTop: '15px',
-                         height: '85vh'
+                         height: '90vh'
                      }}>
-                    <div style={{marginRight: '5px', paddingTop: '5px'}}>
-                        <SearchForm/>
-                    </div>
                     <div style={{marginBottom: '10px', marginLeft: '10px'}}>
                         <Row gutter={10}>
                             <Col>
                                 <Button type="primary" icon={<PlusOutlined/>}
-                                        style={{marginBottom: '10px'}}
+                                        style={{marginLeft: '10px', marginTop: '20px'}}
                                         onClick={() => {
                                             this.modalViewChange("editVisible", true)
                                             this.setState({selectRecord: undefined})
@@ -583,69 +570,82 @@ class ActiveStageConfigPage extends Component {
                             {this.enableOperate.edit() ?
                                 <Col>
                                     <Button icon={<PlusOutlined/>} type={"primary"}
-                                            style={{marginBottom: '10px'}}
+                                            style={{marginLeft: '10px', marginTop: '20px'}}
                                             onClick={() => this.modalViewChange("editVisible", true)}>编辑</Button>
                                 </Col> : <div/>}
                             {this.enableOperate.start() ?
                                 <Col>
                                     <Button icon={<PlusOutlined/>}
-                                            style={{marginBottom: '10px'}}
+                                            style={{marginLeft: '10px', marginTop: '20px'}}
                                             type={"primary"}
                                             onClick={this.startTicket}>提前开启</Button>
                                 </Col> : <div/>}
                             {this.enableOperate.stop() ?
                                 <Col>
                                     <Button icon={<PlusOutlined/>}
-                                            style={{marginBottom: '10px'}}
+                                            style={{marginLeft: '10px', marginTop: '20px'}}
                                             type={"primary"}
                                             onClick={this.stopTicket}>停止活动</Button>
                                 </Col> : <div/>}
                             {this.enableOperate.premiumConfig() ?
                                 <Col>
                                     <Button icon={<PlusOutlined/>}
-                                            style={{marginBottom: '10px'}}
+                                            style={{marginLeft: '10px', marginTop: '20px'}}
                                             type={"primary"}
                                             onClick={() => this.toRewardConfig()}>奖品配置</Button>
                                 </Col> : <div/>}
                             {this.enableOperate.resultEdit() ?
                                 <Col>
                                     <Button icon={<PlusOutlined/>}
-                                            style={{marginBottom: '10px'}}
+                                            style={{marginLeft: '10px', marginTop: '20px'}}
                                             type={"primary"}
                                             onClick={() => this.toConfigResult()}>设定晋级人员</Button>
                                 </Col> : <div/>}
                             {this.enableOperate.startLottery() ?
                                 <Col>
                                     <Button icon={<PlusOutlined/>}
-                                            style={{marginBottom: '10px'}}
+                                            style={{marginLeft: '10px', marginTop: '20px'}}
                                             type={"primary"}
-                                            onClick={() => {
-                                            }}>开启抽奖</Button>
+                                            onClick={() => this.raffle()}>开启抽奖</Button>
                                 </Col> : <div/>}
                         </Row>
                         {/*<Button type="primary" icon={<PlusOutlined/>}
                                 style={{marginBottom: '10px', marginLeft: '10px'}}
                                 onClick={() => this.modalViewChange("editVisible", true)}>创建</Button>*/}
                     </div>
-                    <Table style={{marginLeft: '10px'}} loading={this.state.loading}
-                           rowKey={"id"}
-                           rowSelection={{
-                               type: "radio",
-                               onChange: this.onChange,
-                               selectedRowKeys: (this.state.selectRecord && this.state.selectRecord.id) ? [this.state.selectRecord.id] : []
-                           }}
-                           onRow={
-                               record => ({
-                                   onClick: event => {
+                    <Spin tip={"正在加载。。。"} spinning={this.props.initing > 0 || this.props.loading > 0}>
+                        <Table style={{margin: '20px 20px'}} loading={this.state.loading}
+                               onChange={(pagination, filters, sorts, extra) => tableChange(pagination, this.filterConvert(filters), sorts, extra, this)}
+                               rowKey={"id"}
+                               rowSelection={{
+                                   type: "radio",
+                                   onChange: this.onChange,
+                                   selectedRowKeys: (this.state.selectRecord && this.state.selectRecord.id) ? [this.state.selectRecord.id] : []
+                               }}
+                               onRow={
+                                   record => ({
+                                       onClick: event => {
+                                           if (this.state.selectRecord && this.state.selectRecord.id === record.id) {
+                                               this.setState({selectRecord: undefined})
+                                           } else
+                                               this.setState({selectRecord: record})
+                                       },
+                                   })
+                               }
+                               columns={columns({
+                                   viewRewardRecord: (value, record) => {
                                        this.setState({selectRecord: record})
+                                       this.modalViewChange("giftRecordVisible", true)
                                    },
-                               })
-                           }
-                           columns={columns({
-                               viewRewardRecord: () => this.modalViewChange("giftRecordVisible", true),
-                               viewStageResult: () => this.modalViewChange("stageResultVisible", true)
-                           })}
-                           dataSource={this.props.data}/>
+                                   viewStageResult: (value, record) => {
+                                       this.setState({selectRecord: record})
+                                       this.modalViewChange("giftRecordVisible", true)
+                                   },
+                               })}
+                               dataSource={this.props.data}
+                               pagination={{...this.props.page}}
+                        />
+                    </Spin>
                 </div>
                 <RewardConfig visible={this.state.modalVisibleState.premiumConfigVisible}
                               rewardList={this.props.rewardData}
@@ -671,15 +671,17 @@ class ActiveStageConfigPage extends Component {
 }
 
 const mapState = (state, ownProps) => ({
-    data: state.activeStageConfigModel.data,
+    ...state.activeStageConfigModel,
     rewardData: state.rewardConfigModel.data,
+    initing: state.loading.effects.activeStageConfigModel.init,
+    loading: state.loading.models.activeStageConfigModel,
     ...ownProps
 })
 
 const mapDispatch = (dispatch) => ({
-    init: async (data) => {
+    fetch: async (data) => {
         await dispatch.activeStageConfigModel.init(data)
-        await dispatch.rewardConfigModel.init(data)
+        await dispatch.rewardConfigModel.init({page: {current: 1, size: 99999}})
     },
     /*编辑*/
     update: async (data) => {

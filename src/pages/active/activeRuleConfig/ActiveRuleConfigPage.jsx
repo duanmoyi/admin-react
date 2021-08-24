@@ -1,6 +1,6 @@
 import React, {useEffect} from 'react';
 import {useForm} from "antd/es/form/Form";
-import {Button, Form, Input} from 'antd';
+import {Button, Form, Input, Spin} from 'antd';
 import {connect} from "react-redux";
 
 const {TextArea} = Input
@@ -28,19 +28,19 @@ const ActiveRuleConfigForm = ({data, submit}) => {
             required: true,
             message: `请输入投票规则！`,
         },]}>
-            <TextArea rows={4}/>
+            <TextArea rows={8}/>
         </Form.Item>
         <Form.Item name="lotteryRule" label={"抽奖规则"} rules={[{
             required: true,
             message: `请输入抽奖规则！`,
         },]}>
-            <TextArea rows={4}/>
+            <TextArea rows={8}/>
         </Form.Item>
         <Form.Item name="exchangeRule" label={"选票兑换规则"} rules={[{
             required: true,
             message: `请输入选票兑换规则！`,
         },]}>
-            <TextArea rows={4}/>
+            <TextArea rows={8}/>
         </Form.Item>
         <Form.Item {...{
             wrapperCol: {
@@ -76,15 +76,16 @@ class ActiveRuleConfigPage extends React.Component {
     }
 
     render() {
+        const {initing, loading} = this.props;
         return <div className="site-layout-background"
                     style={{
-                        paddingTop: "50px",
-                        marginLeft: '15px',
-                        marginRight: '15px',
-                        marginTop: '15px',
-                        height: '85vh'
+                        paddingTop: "100px",
+                        height: '90vh'
                     }}>
-            <ActiveRuleConfigForm data={this.props.data} submit={this.submit}/>
+
+            <Spin tip={"正在加载。。。"} spinning={initing > 0 || loading > 0}>
+                <ActiveRuleConfigForm data={this.props.data} submit={this.submit}/>
+            </Spin>
         </div>
     }
 
@@ -93,6 +94,8 @@ class ActiveRuleConfigPage extends React.Component {
 
 const mapState = (state, ownProps) => ({
     data: state.activeRuleConfigModel.data,
+    initing: state.loading.effects.activeRuleConfigModel.init,
+    loading: state.loading.models.activeRuleConfigModel,
     ...ownProps
 })
 

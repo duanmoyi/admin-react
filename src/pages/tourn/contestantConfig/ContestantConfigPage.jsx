@@ -1,31 +1,49 @@
 import React, {Component, useEffect, useState} from 'react';
-import {Button, Col, Form, Input, message, Modal, Row, Select, Table, Tag, Radio} from "antd";
+import {Button, Cascader, Col, Form, Input, message, Modal, Radio, Row, Select, Spin, Table, Tag} from "antd";
 import {PlusOutlined} from "@ant-design/icons";
 import {defaultFormItemLayout} from "../../../utils/formUtils";
-import ImgCrop from "antd-img-crop";
 import {connect} from "react-redux";
 import {Guid} from "js-guid";
-import {CommonImgUpload, getImgUrl} from "../../../utils/core";
+import {
+    CommonImgUpload,
+    defaultSort,
+    getColumnInputSearchProps,
+    getColumnSelectSearchProps,
+    getImgUrl,
+    tableChange
+} from "../../../utils/core";
+import {getCityData} from "../../../request/request";
 
 const {TextArea} = Input
 
-const columns = (operateFunc) => [{
-    title: '选手头像',
+const columns = (operateFunc, teamData) => [{
+    title: '头像',
     dataIndex: 'avatar',
     key: 'avatar',
-    render: value => value ? <img style={{height: '48px'}} src={getImgUrl(value)}/> : <div/>
+    render: value => value ? <img style={{height: '48px'}} src={getImgUrl(value)}/> : <div/>,
 }, {
-    title: '选手姓名',
+    title: '姓名',
     dataIndex: 'name',
     key: 'name',
+    sorter: true,
+    ...getColumnInputSearchProps("姓名")
 }, {
-    title: '选手性别',
+    title: '性别',
     dataIndex: 'gender',
     key: 'gender',
+    ...getColumnSelectSearchProps("性别", [{
+        key: "男",
+        value: "男"
+    }, {key: "女", value: "女"}])
 }, {
-    title: '所属战队',
+    title: '战队',
     dataIndex: 'teamName',
     key: 'teamName',
+    sorter: true,
+    ...getColumnSelectSearchProps("战队", teamData.map(m => ({
+        key: m.teamName + "（" + m.name + "）",
+        value: m.teamId
+    })))
 }, {
     title: '籍贯',
     dataIndex: 'region',
@@ -43,9 +61,16 @@ const columns = (operateFunc) => [{
     dataIndex: 'status',
     key: 'status',
     render: (value, record) => record.status === "已淘汰" ? <Tag color={"#e3e0e2"}>{value}</Tag> :
-        <Tag color={"#45e047"}>{value}</Tag>
+        <Tag color={"#45e047"}>{value}</Tag>,
+    ...getColumnSelectSearchProps("性别", [{
+        key: <Tag color={"#e3e0e2"}>已淘汰</Tag>,
+        value: "已淘汰"
+    }, {
+        key: <Tag color={"#45e047"}>参赛中</Tag>,
+        value: "参赛中"
+    }])
 }, {
-    title: '操作列表',
+    title: '操作',
     dataIndex: 'id',
     key: 'id',
     render: (value, record) => <Row gutter={10}>
@@ -101,13 +126,16 @@ const EditTutorForm = ({visible, data, onCancel, submit, teamData}) => {
     );
 }
 
-const EditForm = ({visible, data, onCancel, submit, teamData}) => {
+const EditForm = ({visible, data, onCancel, submit, teamData, cityData}) => {
     const [form] = Form.useForm()
     const [imgFile, setImgFile] = useState([])
 
     useEffect(() => {
         if (data) {
-            form.setFieldsValue(data)
+            let value = Object.assign({}, data)
+            value.region = data.region ? data.region.split("-") : []
+            value.representRegion = data.representRegion ? data.representRegion.split("-") : []
+            form.setFieldsValue(value)
             if (data.avatar) {
                 setImgFile([{
                     uid: Guid.newGuid().toString(),
@@ -142,6 +170,8 @@ const EditForm = ({visible, data, onCancel, submit, teamData}) => {
         }
     }
 
+    const filter = (inputValue, path) => path.some(option => option.key.toLowerCase().indexOf(inputValue.toLowerCase()) > -1)
+
     return (
         <Modal
             maskClosable={false}
@@ -153,6 +183,12 @@ const EditForm = ({visible, data, onCancel, submit, teamData}) => {
             onOk={() => {
                 form.validateFields()
                     .then((values) => {
+                        if (values.region) {
+                            values.region = values.region.join("-")
+                        }
+                        if (values.representRegion) {
+                            values.representRegion = values.representRegion.join("-")
+                        }
                         if (imgFile.length > 0) {
                             let file = imgFile[0]
                             if (file.response) {
@@ -202,27 +238,31 @@ const EditForm = ({visible, data, onCancel, submit, teamData}) => {
                         {teamData.map(m => <Select.Option value={m.teamId}>{m.teamName}</Select.Option>)}
                     </Select>
                 </Form.Item>
-                <Form.Item name="representRegion" label={"代表城市"} rules={[{
-                    required: true,
-                    message: '请选择代表区域!',
-                }]}>
-                    <Select>
-                        <Select.Option value="江西">江西</Select.Option>
-                        <Select.Option value="浙江">浙江</Select.Option>
-                        <Select.Option value="福建">福建</Select.Option>
-                        <Select.Option value="广东">广东</Select.Option>
-                    </Select>
-                </Form.Item>
                 <Form.Item name="region" label={"籍贯"} rules={[{
                     required: true,
                     message: '请选择来自区域!',
                 }]}>
-                    <Select>
-                        <Select.Option value="江西">江西</Select.Option>
-                        <Select.Option value="浙江">浙江</Select.Option>
-                        <Select.Option value="福建">福建</Select.Option>
-                        <Select.Option value="广东">广东</Select.Option>
-                    </Select>
+                    <Cascader
+                        options={cityData}
+                        fieldNames={{
+                            label: "value", value: "value", children: "children"
+                        }}
+                        placeholder="请选择"
+                        showSearch={{filter}}
+                    />
+                </Form.Item>
+                <Form.Item name="representRegion" label={"代表城市"} rules={[{
+                    required: true,
+                    message: '请选择代表区域!',
+                }]}>
+                    <Cascader
+                        options={cityData}
+                        fieldNames={{
+                            label: "value", value: "value", children: "children"
+                        }}
+                        placeholder="请选择"
+                        showSearch={{filter}}
+                    />
                 </Form.Item>
                 <Form.Item name="avatar" label={"选手头像"}>
                     <CommonImgUpload uploadFunc={imgUploadFunc} imgFile={imgFile}/>
@@ -238,80 +278,22 @@ const EditForm = ({visible, data, onCancel, submit, teamData}) => {
     );
 }
 
-const SearchForm = ({searchFormData, searchFunc}) => {
-    const [form] = Form.useForm()
-
-    useEffect(() => {
-        if (searchFormData) {
-            form.setFieldsValue(searchFormData)
-        } else {
-            form.resetFields()
-        }
-    })
-
-    const formItemLayout = {
-        labelCol: {
-            span: 5,
-        },
-        wrapperCol: {
-            span: 19,
-        },
-    };
-
-    return <Form form={form}{...formItemLayout} style={{marginTop: '10px'}}>
-        <Row gutter={20}>
-            <Col span={21}>
-                <Row gutter={20} justify={"start"}>
-                    <Col span={6}>
-                        <Form.Item name="username" label={"选手姓名"}>
-                            <Input allowClear placeholder="请输入"/>
-                        </Form.Item>
-                    </Col>
-                    <Col span={6}>
-                        <Form.Item name="telephone" label={"所属战队"}>
-                            <Select>
-                                <Select.Option value="virtual">战队1</Select.Option>
-                                <Select.Option value="actual">战队2</Select.Option>
-                            </Select>
-                        </Form.Item>
-                    </Col>
-                    <Col span={6}>
-                        <Form.Item name="category" label={"晋级状态"}>
-                            <Select>
-                                <Select.Option value="virtual">已淘汰</Select.Option>
-                                <Select.Option value="actual">参赛中</Select.Option>
-                            </Select>
-                        </Form.Item>
-                    </Col>
-                </Row>
-            </Col>
-            <Col span={3} style={{
-                display: 'flex',
-                alignItems: 'flex-end',
-                justifyContent: 'flex-end',
-                paddingBottom: '25px',
-            }}>
-                <Button type="primary" onClick={() => searchFunc(form.getFieldsValue())}>
-                    查询
-                </Button>
-                <Button style={{margin: '0 8px'}} onClick={() => form.resetFields()}>
-                    重置
-                </Button>
-            </Col>
-        </Row>
-    </Form>
-}
-
 class ContestantConfigPage extends Component {
+
+    constructor(props, context) {
+        super(props, context);
+        getCityData().then(data => this.cityData = data)
+    }
+
     state = {
         loading: false,
         selectRecord: undefined,
-        modalVisibleState: {editVisible: false}
+        modalVisibleState: {editVisible: false},
+        searchData: {filter: [], sort: [defaultSort], page: this.props.page}
     }
 
-
     componentWillMount() {
-        this.props.init()
+        this.props.fetch(this.state.searchData)
     }
 
     modalViewChange = (modalStateKey, view) => {
@@ -330,7 +312,20 @@ class ContestantConfigPage extends Component {
         }
         this.modalViewChange("editVisible", false)
         this.modalViewChange("editTutorVisible", false)
-        this.props.init()
+        this.props.fetch(this.state.searchData)
+    }
+
+    filterConvert = filters => {
+        let result = []
+        for (let key in filters) {
+            if (!filters[key]) {
+                continue
+            }
+
+            let operate = "eq"
+            result.push({field: key, value: filters[key], type: operate})
+        }
+        return result
     }
 
     render() {
@@ -338,39 +333,36 @@ class ContestantConfigPage extends Component {
             <React.Fragment>
                 <div className="site-layout-background"
                      style={{
-                         paddingTop: "10px",
-                         marginLeft: '15px',
-                         marginRight: '15px',
-                         marginTop: '15px',
-                         height: '85vh'
+                         height: '90vh'
                      }}>
-                    <div style={{marginRight: '5px', paddingTop: '5px'}}>
-                        <SearchForm/>
-                    </div>
                     <div style={{marginBottom: '10px', marginLeft: '10px'}}>
                         <Button type="primary" icon={<PlusOutlined/>}
-                                style={{marginBottom: '10px', marginLeft: '10px'}}
+                                style={{marginLeft: '10px', marginTop: '20px'}}
                                 onClick={() => {
                                     this.modalViewChange("editVisible", true)
                                     this.setState({selectRecord: undefined})
                                 }}>添加</Button>
                     </div>
-                    <Table style={{marginLeft: '10px'}} loading={this.state.loading} rowKey={"id"}
-                           onRow={
-                               record => ({
-                                   onClick: event => {
-                                       this.setState({selectRecord: record})
-                                   },
-                               })
-                           }
-                           columns={columns({
-                               editFunc: () => this.modalViewChange("editVisible", true),
-                               editTeam: () => this.modalViewChange("editTutorVisible", true),
-                           })}
-                           dataSource={this.props.data}/>
+                    <Spin tip={"正在加载。。。"} spinning={this.props.initing > 0 || this.props.loading > 0}>
+                        <Table style={{margin: '20px 20px'}} loading={this.state.loading} rowKey={"id"}
+                               onChange={(pagination, filters, sorts, extra) => tableChange(pagination, this.filterConvert(filters), sorts, extra, this)}
+                               onRow={
+                                   record => ({
+                                       onClick: event => {
+                                           this.setState({selectRecord: record})
+                                       },
+                                   })
+                               }
+                               columns={columns({
+                                   editFunc: () => this.modalViewChange("editVisible", true),
+                                   editTeam: () => this.modalViewChange("editTutorVisible", true),
+                               }, this.props.teamData || [])}
+                               dataSource={this.props.data}
+                               pagination={{...this.props.page}}/>
+                    </Spin>
                 </div>
                 <EditForm visible={this.state.modalVisibleState.editVisible} data={this.state.selectRecord}
-                          teamData={this.props.teamData}
+                          teamData={this.props.teamData} cityData={this.cityData}
                           onCancel={() => this.modalViewChange("editVisible", false)} submit={this.submit}/>
                 <EditTutorForm visible={this.state.modalVisibleState.editTutorVisible} data={this.state.selectRecord}
                                teamData={this.props.teamData}
@@ -382,13 +374,15 @@ class ContestantConfigPage extends Component {
 }
 
 const mapState = (state, ownProps) => ({
-    data: state.contestantConfigModel.data,
+    ...state.contestantConfigModel,
     teamData: state.teamConfigModel.data,
+    initing: state.loading.effects.contestantConfigModel.init,
+    loading: state.loading.models.contestantConfigModel,
     ...ownProps
 })
 
 const mapDispatch = (dispatch) => ({
-    init: async (data) => {
+    fetch: async (data) => {
         await dispatch.contestantConfigModel.init(data)
         await dispatch.teamConfigModel.init()
     },

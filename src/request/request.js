@@ -28,7 +28,7 @@ export const defaultErrorPrompt = status => {
 const loadServerConfig = async () => {
     const response = await axios({
         method: 'get',
-        url: '/config/load',
+        url: 'config/load',
         headers: {},
     })
     if (response.data) {
@@ -36,10 +36,37 @@ const loadServerConfig = async () => {
     }
 }
 
+const loadCityData = async () => {
+    const response = await axios({
+        method: 'get',
+        url: 'config/cityData',
+        headers: {},
+    })
+    if (response.data) {
+        return response.data
+    }
+}
+
+export const getRegisterImgUrl = (path) => {
+    let host = serverConfig.registerHost
+    return host + "/resource/" + path
+
+}
+
 export var serverConfig = {}
 
+export var cityData = []
+
+export const getCityData = async () => {
+    if (cityData.length > 0) {
+        return cityData
+    }
+    cityData = await loadCityData()
+    return cityData
+}
+
 export const getServerConfig = async () => {
-    if (serverConfig.apiServerHost) {
+    if (serverConfig.apiHost) {
         return serverConfig
     }
     serverConfig = await loadServerConfig()
@@ -56,8 +83,7 @@ export default async function request(method, url, data, successFunc = () => {
         const response = await axios({
             method: method,
             url: url,
-            // baseURL: "https://" + serverConfig.apiServerHost + ":" + serverConfig.apiServerPort,
-            baseURL: "https://" + serverConfig.apiServerHost,
+            baseURL: serverConfig.apiHost,
             data: data ? data : {},
             headers: header,
             timeout: serverConfig.apiRequestTimeout
