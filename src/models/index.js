@@ -6,8 +6,11 @@ import teamConfigModel from "./TeamConfigModel";
 import contestantConfigModel from "./ContestantConfigModel";
 import rewardRecordConfig from "./RewardRecordConfigModel";
 import ticketRecordConfig from "./TicketRecordConfigModel";
+import memberInfoConfig from "./MemberInfoConfigModel";
 import userInfoConfig from "./UserInfoConfigModel";
 import registerInfoConfig from "./RegisterInfoConfigModel";
+import loginUserConfig from "./LoginUserConfig";
+import rankInfoConfig from "./RankInfoModel";
 
 export default {
     layoutConfig,
@@ -18,6 +21,9 @@ export default {
     contestantConfigModel,
     rewardRecordConfig,
     ticketRecordConfig,
+    memberInfoConfig,
+    registerInfoConfig,
     userInfoConfig,
-    registerInfoConfig
+    loginUserConfig,
+    rankInfoConfig,
 }

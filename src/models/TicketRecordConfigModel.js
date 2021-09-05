@@ -13,7 +13,7 @@ export default  {
     },
     effects: (dispatch) => ({
         async init(payload, rootState) {
-            let result = await tableFetch(payload, "api/vote_records", "voteRecords")
+            let result = await tableFetch(payload, "api2/vote_records", "voteRecords")
             dispatch.ticketRecordConfig.updateData(result)
         },
     })

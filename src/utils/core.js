@@ -6,6 +6,7 @@ import ImgCrop from 'antd-img-crop';
 import moment from "moment";
 import request from "../request/request";
 import {Guid} from "js-guid";
+import {navigate} from "@reach/router";
 
 const {RangePicker} = DatePicker
 
@@ -81,7 +82,20 @@ export const CommonImgUpload = ({uploadFunc, imgFile, maxCount = 1}) => {
 
 export const getImgUrl = (path) => {
     return "resource/" + path
+}
 
+export const loginUser = () => {
+    let userInfo = localStorage.getItem("userInfo") ? JSON.parse(localStorage.getItem("userInfo")) : {}
+    if (userInfo && userInfo.username) {
+        return userInfo
+    }
+}
+
+export const loginRedirect = async () => {
+    const userInfo = loginUser()
+    if (userInfo) {
+        await navigate(userInfo.roles.filter(m => m === "ADMIN" || m === "VOTE_ADMIN").length > 0 ? "activeRuleConfig" : "registerInfo")
+    }
 }
 
 export const getColumnInputSearchProps = (columnTitle) => ({
@@ -252,7 +266,7 @@ export const defaultSort = {field: 'id', order: 'asc'}
 
 export const defaultPage = {current: 1, pageSize: 10}
 
-export const tableFetch = async (searchData, apiUrl, resultKey, defaultSortInfo=defaultSort) => {
+export const tableFetch = async (searchData, apiUrl, resultKey, defaultSortInfo = defaultSort) => {
     let {sort, filter, page} = searchData
     let {current, pageSize} = page
     current = Math.max(0, current - 1)
@@ -261,7 +275,7 @@ export const tableFetch = async (searchData, apiUrl, resultKey, defaultSortInfo=
     }
     let filters = (filter || []).map(m => getFilter(m)).filter(m => m)
     let sorts = sort.filter(m => m).map(m => "sort=" + m.field + "," + m.order).reduce((m, n) => m + "&" + n)
-    let result = await request("get", apiUrl + "?size=" + pageSize + "&page=" + current + "&" + sorts + (filters.length > 0 ? "&" + filters.join("&") : ""), undefined)
+    let result = await request("get", apiUrl + "?size=" + pageSize + "&page=" + (filters.length === 0 ? current : 0) + "&" + sorts + (filters.length > 0 ? "&" + filters.join("&") : ""), undefined)
     return {
         data: result && result._embedded && result._embedded[resultKey] || [],
         page: pageConvert(result && result.page || {

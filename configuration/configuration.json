@@ -1,10 +1,10 @@
 {
-  "serverPort": 53103,
+  "serverPort": 53102,
   "defaultPageSize": 10,
   "maxPageSize": 10000000,
   "apiHost": "https://voting.uufish.com.cn",
   "apiRequestTimeout": 300000,
   "resourceDir":"./picture/",
   "registerHost": "https://voting.uufish.com.cn/register",
-  "registerWorkDir": "/usr/local/webserver/register"
+  "registerWorkDir": "/usr/local/webserver/"
 }

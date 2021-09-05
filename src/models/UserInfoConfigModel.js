@@ -1,7 +1,7 @@
-import request from "../request/request";
+import request, {operateSuccessFunc} from "../request/request";
 import {defaultPage, tableFetch} from "../utils/core";
 
-export default  {
+export default {
     state: {
         data: [],
         page: defaultPage
@@ -13,8 +13,17 @@ export default  {
     },
     effects: (dispatch) => ({
         async init(payload, rootState) {
-            let result = await tableFetch(payload, "api/user_info", "userInfoes")
+            let result = await tableFetch(payload, "api2/users", "appUsers")
             dispatch.userInfoConfig.updateData(result)
+        },
+        async update(payload, rootState) {
+            let result = await request("put", "api2/users/" + payload.id, payload, operateSuccessFunc)
+        },
+        async add(payload, rootState) {
+            let result = await request("post", "api2/users", payload, operateSuccessFunc)
+        },
+        async delete(payload, rootState) {
+            let result = await request("delete", "api2/users" + payload, operateSuccessFunc)
         },
     })
 }

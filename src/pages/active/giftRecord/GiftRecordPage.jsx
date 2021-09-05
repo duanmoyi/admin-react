@@ -27,35 +27,35 @@ const getExpressStatus = record => {
 
 const columns = (operateFunc) => [{
     title: '用户',
-    dataIndex: 'username',
-    key: 'username',
+    dataIndex: 'userNickName',
+    key: 'userNickName',
     sorter: true,
     ...getColumnInputSearchProps("用户")
 }, {
     title: '手机号',
-    dataIndex: 'telephone',
-    key: 'telephone',
+    dataIndex: 'userPhoneNumber',
+    key: 'userPhoneNumber',
     sorter: true,
     ...getColumnInputSearchProps("手机号")
 }, {
     title: '名称',
-    dataIndex: 'giftName',
-    key: 'giftName',
+    dataIndex: 'rewardName',
+    key: 'rewardName',
     sorter: true,
     ...getColumnInputSearchProps("名称")
 }, {
     title: '类型',
-    dataIndex: 'giftCategory',
-    key: 'giftCategory',
+    dataIndex: 'rewardType',
+    key: 'rewardType',
     sorter: true,
     ...getColumnSelectSearchProps("类型", [{
         key: "实物奖品",
         value: "实物奖品",
-    }, {key: "虚拟奖品", value: "虚拟奖品",}]),
+    }, {key: "虚拟奖品", value: "虚拟奖品",}, {key: "支付宝奖品", value: "支付宝奖品",}]),
 }, {
     title: '活动',
-    dataIndex: 'activeStageName',
-    key: 'activeStageName',
+    dataIndex: 'stageName',
+    key: 'stageName',
     sorter: true,
     ...getColumnInputSearchProps("活动")
 }, {
@@ -162,8 +162,20 @@ class GiftRecordPage extends Component {
         })
     }
 
+    init() {
+        let {filter, ...other} = this.state.searchData
+        filter.push({
+            field: "stageId", value: this.props.stageId, type: "eq"
+        })
+        if (this.props.stageId) {
+            this.props.fetch({filter, ...other})
+        }else{
+            this.props.fetch(this.state.searchData)
+        }
+    }
+
     componentWillMount() {
-        this.props.fetch(this.state.searchData)
+        this.init()
     }
 
     express = (data) => {
@@ -185,16 +197,16 @@ class GiftRecordPage extends Component {
             }
             result.push({field: key, value: filters[key], type: operate})
         }
+        if (this.props.stageId) {
+            result.push({field: "stageId", value: this.props.stageId, type: "eq"})
+        }
         return result
     }
 
     render() {
         return (
             <React.Fragment>
-                <div className="site-layout-background"
-                     style={{
-                         height: this.props.height || '90vh'
-                     }}>
+                <div className="site-layout-background">
                     <Spin tip={"正在加载。。。"} spinning={this.props.initing > 0 || this.props.loading > 0}>
                         <Table style={{padding: '50px 30px'}} bordered loading={this.state.loading}
                                size={"middle"}

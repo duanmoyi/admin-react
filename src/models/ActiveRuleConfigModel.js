@@ -15,11 +15,11 @@ export default {
     },
     effects: (dispatch) => ({
         async init(payload, rootState) {
-            let result = await request("get", "api/vote_info", undefined)
+            let result = await request("get", "api2/vote_info", undefined)
             dispatch.activeRuleConfigModel.updateData(result || {})
         },
         async update(payload, rootState) {
-            let result = await request("put", "api/vote_info", payload, operateSuccessFunc)
+            let result = await request("put", "api2/vote_info", payload, operateSuccessFunc)
         }
     })
 }

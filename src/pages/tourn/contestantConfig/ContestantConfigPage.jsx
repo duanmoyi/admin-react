@@ -1,5 +1,5 @@
 import React, {Component, useEffect, useState} from 'react';
-import {Button, Cascader, Col, Form, Input, message, Modal, Radio, Row, Select, Spin, Table, Tag} from "antd";
+import {Button, Cascader, Col, Form, Input, message, Modal, Radio, Row, Select, Spin, Table, Tag, Image} from "antd";
 import {PlusOutlined} from "@ant-design/icons";
 import {defaultFormItemLayout} from "../../../utils/formUtils";
 import {connect} from "react-redux";
@@ -20,7 +20,7 @@ const columns = (operateFunc, teamData) => [{
     title: '头像',
     dataIndex: 'avatar',
     key: 'avatar',
-    render: value => value ? <img style={{height: '48px'}} src={getImgUrl(value)}/> : <div/>,
+    render: value => value ? <Image width="48px" src={getImgUrl(value)}/> : <div/>,
 }, {
     title: '姓名',
     dataIndex: 'name',
@@ -84,7 +84,7 @@ const EditTutorForm = ({visible, data, onCancel, submit, teamData}) => {
     const [form] = Form.useForm()
 
     useEffect(() => {
-        if (data) {
+        if (data && data.id) {
             form.setFieldsValue(data)
         } else {
             form.resetFields()
@@ -131,7 +131,9 @@ const EditForm = ({visible, data, onCancel, submit, teamData, cityData}) => {
     const [imgFile, setImgFile] = useState([])
 
     useEffect(() => {
-        if (data) {
+        console.log("data::::::::::::{}", data)
+        if (data && data.id) {
+            console.log("11111111111111111")
             let value = Object.assign({}, data)
             value.region = data.region ? data.region.split("-") : []
             value.representRegion = data.representRegion ? data.representRegion.split("-") : []
@@ -145,8 +147,6 @@ const EditForm = ({visible, data, onCancel, submit, teamData, cityData}) => {
                     url: getImgUrl(data.avatar),
                 }])
             }
-        } else {
-            form.resetFields()
         }
         return () => {
             form.resetFields()
@@ -174,6 +174,7 @@ const EditForm = ({visible, data, onCancel, submit, teamData, cityData}) => {
 
     return (
         <Modal
+            destroyOnClose
             maskClosable={false}
             visible={visible}
             title={data ? "修改选手信息" : "添加选手信息"}
@@ -202,7 +203,7 @@ const EditForm = ({visible, data, onCancel, submit, teamData, cityData}) => {
                         if (!values.gender) {
                             values.gender = "男"
                         }
-                        if (data) {
+                        if (data && data.id) {
                             values.status = data.status
                             values.id = data.id
                             submit(values, 'edit')
@@ -287,13 +288,13 @@ class ContestantConfigPage extends Component {
 
     state = {
         loading: false,
-        selectRecord: undefined,
+        selectRecord: {},
         modalVisibleState: {editVisible: false},
         searchData: {filter: [], sort: [defaultSort], page: this.props.page}
     }
 
     componentWillMount() {
-        this.props.fetch(this.state.searchData)
+        this.props.fetch(this.state.searchData, "init")
     }
 
     modalViewChange = (modalStateKey, view) => {
@@ -310,6 +311,7 @@ class ContestantConfigPage extends Component {
         } else {
             await this.props.add(data)
         }
+        this.setState({selectRecord: {}})
         this.modalViewChange("editVisible", false)
         this.modalViewChange("editTutorVisible", false)
         this.props.fetch(this.state.searchData)
@@ -331,20 +333,17 @@ class ContestantConfigPage extends Component {
     render() {
         return (
             <React.Fragment>
-                <div className="site-layout-background"
-                     style={{
-                         height: '90vh'
-                     }}>
+                <div className="site-layout-background">
                     <div style={{marginBottom: '10px', marginLeft: '10px'}}>
                         <Button type="primary" icon={<PlusOutlined/>}
                                 style={{marginLeft: '10px', marginTop: '20px'}}
                                 onClick={() => {
                                     this.modalViewChange("editVisible", true)
-                                    this.setState({selectRecord: undefined})
+                                    this.setState({selectRecord: {}})
                                 }}>添加</Button>
                     </div>
                     <Spin tip={"正在加载。。。"} spinning={this.props.initing > 0 || this.props.loading > 0}>
-                        <Table style={{margin: '20px 20px'}} loading={this.state.loading} rowKey={"id"}
+                        <Table style={{margin: '20px 20px'}} loading={this.state.loading} rowKey={"id"} size={"small"}
                                onChange={(pagination, filters, sorts, extra) => tableChange(pagination, this.filterConvert(filters), sorts, extra, this)}
                                onRow={
                                    record => ({
@@ -382,8 +381,16 @@ const mapState = (state, ownProps) => ({
 })
 
 const mapDispatch = (dispatch) => ({
-    fetch: async (data) => {
-        await dispatch.contestantConfigModel.init(data)
+    fetch: async (data, mode = "fetch") => {
+        if (mode === "init") {
+            await dispatch.contestantConfigModel.init({
+                filter: [],
+                sort: [defaultSort],
+                page: {current: 1, pageSize: 10}
+            })
+        }else{
+            await dispatch.contestantConfigModel.init(data)
+        }
         await dispatch.teamConfigModel.init()
     },
     /*编辑*/

@@ -1,59 +1,39 @@
 import React, {Component, useEffect} from 'react';
-import {Button, Col, Form, Input, Row, Select, Spin, Table, Tag} from "antd";
-import {
-    defaultSort,
-    getColumnInputSearchProps,
-    getColumnTimeRangeSearchProps,
-    renderTime,
-    tableChange
-} from "../../../utils/core";
+import {Button, Col, Form, Input, Row, Select, Spin, Table, Image} from "antd";
+import {defaultSort, getColumnInputSearchProps, getImgUrl, tableChange} from "../../../utils/core";
 import {connect} from "react-redux";
 
 const columns = [{
-    title: '用户名',
-    dataIndex: 'userNickName',
-    key: 'userNickName',
-    sorter: true,
-    ...getColumnInputSearchProps("用户")
+    title: '头像',
+    dataIndex: 'avatar',
+    key: 'avatar',
+    render: value => value ? <Image width="48px"  src={value}/> : <div/>
+}, {
+    title: '昵称',
+    dataIndex: 'nickName',
+    key: 'nickName',
+    ...getColumnInputSearchProps("昵称")
 }, {
     title: '手机号',
-    dataIndex: 'userPhoneName',
-    key: 'userPhoneName',
-    sorter: true,
+    dataIndex: 'phoneNumber',
+    key: 'phoneNumber',
     ...getColumnInputSearchProps("手机号")
 }, {
-    title: '选手',
-    dataIndex: 'contestantName',
-    key: 'contestantName',
-    sorter: true,
-    ...getColumnInputSearchProps("选手")
-
+    title: '支付宝ID',
+    dataIndex: 'alipayId',
+    key: 'alipayId',
+    ...getColumnInputSearchProps("支付宝编号")
 }, {
-    title: '活动',
-    dataIndex: 'stageName',
-    key: 'stageName',
-    sorter: true,
-    ...getColumnInputSearchProps("活动")
+    title: '省份',
+    dataIndex: 'province',
+    key: 'province',
 }, {
-    title: '投票时间',
-    dataIndex: 'time',
-    key: 'time',
-    sorter: true,
-    render: renderTime,
-    ...getColumnTimeRangeSearchProps('投票时间')
-}, {
-    title: '票数',
-    dataIndex: 'voteCount',
-    key: 'voteCount',
-    sorter: true,
-}, {
-    title: 'IP',
-    dataIndex: 'userIp',
-    key: 'userIp',
-    ...getColumnInputSearchProps("IP")
+    title: '城市',
+    dataIndex: 'city',
+    key: 'city',
 }]
 
-class TicketRecordPage extends Component {
+class MemberInfoPage extends Component {
     state = {
         loading: false,
         searchData: {filter: [], sort: [defaultSort], page: this.props.page}
@@ -71,10 +51,6 @@ class TicketRecordPage extends Component {
             }
 
             let operate = "eq"
-            switch (key) {
-                case "time":
-                    operate = "timeRange"
-            }
             result.push({field: key, value: filters[key], type: operate})
         }
         return result
@@ -98,15 +74,15 @@ class TicketRecordPage extends Component {
 }
 
 const mapState = (state, ownProps) => ({
-    ...state.ticketRecordConfig,
-    initing: state.loading.effects.ticketRecordConfig.init,
-    loading: state.loading.models.ticketRecordConfig,
+    ...state.memberInfoConfig,
+    initing: state.loading.effects.memberInfoConfig.init,
+    loading: state.loading.models.memberInfoConfig,
     ...ownProps
 })
 
 const mapDispatch = (dispatch) => ({
     fetch: async (data) => {
-        await dispatch.ticketRecordConfig.init(data)
+        await dispatch.memberInfoConfig.init(data)
     },
 })
-export default connect(mapState, mapDispatch)(TicketRecordPage);
+export default connect(mapState, mapDispatch)(MemberInfoPage);

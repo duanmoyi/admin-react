@@ -13,17 +13,17 @@ export default {
     },
     effects: (dispatch) => ({
         async init(payload, rootState) {
-            let result = await tableFetch(payload, "api/rewards", "rewards")
+            let result = await tableFetch(payload, "api2/rewards", "rewards")
             dispatch.rewardConfigModel.updateData(result)
         },
         async update(payload, rootState) {
-            let result = await request("put", "api/rewards/" + payload.id, payload)
+            let result = await request("put", "api2/rewards/" + payload.id, payload)
         },
         async add(payload, rootState) {
-            let result = await request("post", "api/rewards", payload)
+            let result = await request("post", "api2/rewards", payload)
         },
         async delete(payload, rootState) {
-            let result = await request("delete", "api/rewards" + payload)
+            let result = await request("delete", "api2/rewards" + payload)
         },
     })
 }

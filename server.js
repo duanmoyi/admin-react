@@ -10,6 +10,10 @@ const configuration = require('./configuration/configuration.json');
 const cityJson = require('./configuration/city.json');
 const archiver = require('archiver')
 const Stream = require('stream')
+const Canvas = require('canvas')
+const moment = require('moment')
+Canvas.registerFont(path.resolve(__dirname, "public/font/SourceHanSerifSC-Heavy.otf"), {family: "SourceHanSerifSC-Heavy"})
+Canvas.registerFont(path.resolve(__dirname, "public/font/zihun143.ttf"), {family: "zihun143"})
 
 const app = express();
 // enable files upload
@@ -95,23 +99,15 @@ app.listen(port, () =>
 app.use(express.static(path.join(__dirname, "public")))
 app.use("/resource", express.static(configuration.resourceDir))
 
-// app.use(async (req, res, next) => {
-//     const reqPath = req.path;
-//     if (reqPath === "/" || reqPath.startsWith("/page") || reqPath.startsWith("/login")) {
-//         return res.redirect('/');
-//     }
-//     next()
-// })
-
 app.get('/download-picture', async (req, res) => {
     var archive = archiver('zip');
 
-    archive.on('error', function(err) {
+    archive.on('error', function (err) {
         res.status(500).send({error: err.message});
     });
 
     //on stream closed we can end the request
-    archive.on('end', function() {
+    archive.on('end', function () {
         console.log('Archive wrote %d bytes', archive.pointer());
     });
 
@@ -123,8 +119,11 @@ app.get('/download-picture', async (req, res) => {
 
     var directories = [configuration.registerWorkDir + '/picture']
 
-    for(var i in directories) {
-        archive.directory(directories[i], directories[i].replace(__dirname + '/picture', ''));
+    for (var i in directories) {
+        archive.directory(directories[i], directories[i].replace(configuration.registerWorkDir + '/picture', ''), m => {
+
+            return m
+        });
     }
 
     archive.finalize();
@@ -180,6 +179,106 @@ app.get('/config/cityData', async (req, res) => {
         res.status(500).send(err);
     }
 });
+
+app.get('/loginHeader/:title', async (req, res) => {
+    const title = req.params.title
+    const tmpCanvas = Canvas.createCanvas(1080, 66)
+    const tmpCtx = tmpCanvas.getContext('2d')
+    tmpCtx.font = 'bold 66px "SourceHanSerifSC-Heavy"'
+    const measureText = tmpCtx.measureText(title)
+
+    const canvas = Canvas.createCanvas(measureText.width, 66)
+    const ctx = canvas.getContext('2d')
+    ctx.fillStyle = '#4e4c4c'
+    ctx.font = 'bold 66px "SourceHanSerifSC-Heavy"'
+    ctx.fillText(title, 0, 58)
+    const buffer = canvas.toBuffer('image/png')
+    res.contentType("image/png")
+    res.send(buffer)
+
+    res.end()
+})
+
+app.get("/activeTitle/:title", async (req, res) => {
+    const title = req.params.title
+    const tmpCanvas = Canvas.createCanvas(1080, 66)
+    const tmpCtx = tmpCanvas.getContext('2d')
+    tmpCtx.font = 'italic bold 66px "zihun143"'
+    tmpCtx.transform(1, 0, -0.2, 1, 0, 0)
+    const measureText = tmpCtx.measureText(title + "/人气榜")
+
+    const canvas = Canvas.createCanvas(measureText.width + 10, 66)
+    const ctx = canvas.getContext('2d')
+    ctx.fillStyle = '#f6aa10'
+    ctx.font = 'italic bold 66px "zihun143"'
+    ctx.transform(1, 0, -0.2, 1, 0, 0)
+    ctx.fillText(title + "/人气榜", 10, 58)
+    const buffer = canvas.toBuffer('image/png')
+    res.contentType("image/png")
+    res.send(buffer)
+
+    res.end()
+})
+
+app.get("/activeText/:text", async (req, res) => {
+    const text = req.params.text
+    const tmpCanvas = Canvas.createCanvas(1080, 66)
+    const tmpCtx = tmpCanvas.getContext('2d')
+    tmpCtx.font = 'italic bold 66px "zihun143"'
+    tmpCtx.transform(1, 0, -0.2, 1, 0, 0)
+    const measureText = tmpCtx.measureText(text)
+
+    const canvas = Canvas.createCanvas(measureText.width, 66)
+    const ctx = canvas.getContext('2d')
+    ctx.fillStyle = '#ffffff'
+    ctx.font = 'italic bold 66px "zihun143"'
+    ctx.fillText(text, 0, 58)
+    const buffer = canvas.toBuffer('image/png')
+    res.contentType("image/png")
+    res.send(buffer)
+
+    res.end()
+})
+
+app.get('/titleImg/:title', async (req, res) => {
+    const title = req.params.title
+    const tmpCanvas = Canvas.createCanvas(1080, 66)
+    const tmpCtx = tmpCanvas.getContext('2d')
+    tmpCtx.font = 'bold 66px "SourceHanSerifSC-Heavy"'
+    const measureText = tmpCtx.measureText(title)
+
+    const canvas = Canvas.createCanvas(measureText.width, 66)
+    const ctx = canvas.getContext('2d')
+    ctx.fillStyle = '#ffffff'
+    ctx.font = 'bold 66px "SourceHanSerifSC-Heavy"'
+    ctx.fillText(title, 0, 58)
+    const buffer = canvas.toBuffer('image/png')
+    res.contentType("image/png")
+    res.send(buffer)
+
+    res.end()
+})
+
+app.get('/timeImg/:beginTime/:endTime', async (req, res) => {
+
+    const beginTime = moment(req.params.beginTime).format("YYYY-MM-DD HH:mm:ss")
+    const endTime = moment(req.params.endTime).format("YYYY-MM-DD HH:mm:ss")
+    const tmpCanvas = Canvas.createCanvas(1080, 24)
+    const tmpCtx = tmpCanvas.getContext('2d')
+    tmpCtx.font = 'bold 24px "SourceHanSerifSC-Heavy"'
+    const measureText = tmpCtx.measureText(beginTime + " - " + endTime)
+
+    const canvas = Canvas.createCanvas(measureText.width, 24)
+    const ctx = canvas.getContext('2d')
+    ctx.fillStyle = '#ffffff'
+    ctx.font = 'bold 24px "SourceHanSerifSC-Heavy"'
+    ctx.fillText(beginTime + " - " + endTime, 0, 22)
+    const buffer = canvas.toBuffer('image/png')
+    res.contentType("image/png")
+    res.send(buffer)
+
+    res.end()
+})
 
 app.use((req, res) => {
     res.sendFile(path.resolve(__dirname, "public/index.html"))

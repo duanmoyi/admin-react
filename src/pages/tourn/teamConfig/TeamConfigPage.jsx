@@ -14,7 +14,7 @@ import {
     message,
     Modal,
     Upload,
-    Divider, Spin
+    Divider, Spin, Image
 } from "antd";
 import {defaultFormItemLayout} from "../../../utils/formUtils";
 import ImgCrop from "antd-img-crop";
@@ -30,7 +30,7 @@ const columns = (operateFunc) => [{
     title: '头像',
     dataIndex: 'teamAvatar',
     key: 'teamAvatar',
-    render: value => value ? <img style={{height: '48px'}} src={getImgUrl(value)}/> : <div/>
+    render: value => value ? <Image width="48px" src={getImgUrl(value)}/> : <div/>
 }, {
     title: '名称',
     dataIndex: 'teamName',
@@ -43,7 +43,7 @@ const columns = (operateFunc) => [{
     title: '导师头像',
     dataIndex: 'avatar',
     key: 'avatar',
-    render: value => value ? <img style={{height: '48px'}} src={getImgUrl(value)}/> : <div/>
+    render: value => value ? <Image width="48px" src={getImgUrl(value)}/> : <div/>
 }, {
     title: '口号',
     dataIndex: 'teamSlogan',
@@ -62,7 +62,7 @@ const contestantColumn = [{
     title: '选手头像',
     dataIndex: 'avatar',
     key: 'avatar',
-    render: value => value ? <img style={{height: '48px'}} src={getImgUrl(value)}/> : <div/>
+    render: value => value ? <Image width="48px" src={getImgUrl(value)}/> : <div/>
 }, {
     title: '选手姓名',
     dataIndex: 'name',
@@ -283,7 +283,7 @@ class TeamConfigPage extends Component {
     }
 
     viewContestantList = async (teamId) => {
-        let data = await request("get", "/api/contestants?teamId=" + teamId)
+        let data = await request("get", "api2/contestants?teamId=" + teamId)
         this.setState({
             contestantData: data && data._embedded && data._embedded.contestants || []
         })
@@ -293,13 +293,10 @@ class TeamConfigPage extends Component {
     render() {
         return (
             <React.Fragment>
-                <div className="site-layout-background"
-                     style={{
-                         height: '90vh'
-                     }}>
+                <div className="site-layout-background">
                     <div style={{marginBottom: '10px', marginLeft: '10px'}}>
                         <Button type="primary" icon={<PlusOutlined/>}
-                                style={{marginLeft:'10px', marginTop:'20px'}}
+                                style={{marginLeft: '10px', marginTop: '20px'}}
                                 onClick={() => {
                                     this.modalViewChange("editVisible", true)
                                     this.setState({selectRecord: undefined})

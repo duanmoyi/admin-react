@@ -1,7 +1,7 @@
 import request from "../request/request";
 import {defaultPage, tableFetch} from "../utils/core";
 
-export default {
+export default  {
     state: {
         data: [],
         page: defaultPage
@@ -13,8 +13,8 @@ export default {
     },
     effects: (dispatch) => ({
         async init(payload, rootState) {
-            let result = await tableFetch(payload, "api2/registers", "registerInfoes", {field: 'seq', order: 'asc'})
-            dispatch.registerInfoConfig.updateData(result)
+            let result = await tableFetch(payload, "api2/user_info", "userInfoes")
+            dispatch.memberInfoConfig.updateData(result)
         },
     })
 }

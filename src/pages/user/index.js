@@ -1,5 +1,5 @@
-import UserInfo from "./userInfo";
+import UserInfo from "./userInfoConfig";
 
-export {
+export  {
     UserInfo
 }

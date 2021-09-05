@@ -1,5 +1,5 @@
 import React, {Component, useEffect} from 'react';
-import {Modal, Button, Col, Form, Input, Row, Select, Transfer, Switch, Table, Tag} from "antd";
+import {Modal, Button, Col, Form, Input, Row, Select, Transfer, Switch, Table, Tag, Image} from "antd";
 import {connect} from "react-redux";
 import {defaultPage, defaultSort, getImgUrl} from "../../../utils/core";
 import difference from 'lodash/difference';
@@ -10,7 +10,7 @@ const selectColumns = [{
     title: '头像',
     dataIndex: 'avatar',
     key: 'avatar',
-    render: value => value ? <img style={{height: '48px'}} src={getImgUrl(value)}/> : <div/>
+    render: value => value ? <Image width="48px" src={getImgUrl(value)}/> : <div/>
 }, {
     title: '姓名',
     dataIndex: 'name',
@@ -21,7 +21,7 @@ const columns = [{
     title: '头像',
     dataIndex: 'avatar',
     key: 'avatar',
-    render: value => value ? <img style={{height: '48px'}} src={getImgUrl(value)}/> : <div/>
+    render: value => value ? <Image style={{height: '48px'}} src={getImgUrl(value)}/> : <div/>
 }, {
     title: '姓名',
     dataIndex: 'name',
@@ -95,7 +95,6 @@ class ActiveStageContestantPage extends React.Component {
         loading: false,
         selectRecord: undefined,
         modalVisibleState: {editVisible: false},
-        targetKeys: this.props.configResult || [],
     }
 
     componentWillMount() {
@@ -103,11 +102,12 @@ class ActiveStageContestantPage extends React.Component {
     }
 
     onChange = nextTargetKeys => {
+        debugger
         this.setState({targetKeys: nextTargetKeys});
     };
 
     onSubmit = () => {
-        let keys = this.state.targetKeys
+        let keys = this.state.targetKeys || this.props.configResult
         this.props.submit(keys)
     }
 
@@ -119,22 +119,20 @@ class ActiveStageContestantPage extends React.Component {
                 title={"设定晋级人员"}
                 okText="提交"
                 cancelText="取消"
-                onCancel={() => {
-                    this.props.onCancel()
-                    this.setState({targetKeys: []})
-                }}
+                onCancel={this.props.onCancel}
                 onOk={this.onSubmit}
                 width={"1500px"}>
                 <TableTransfer
                     width={"1500px"}
                     loading={this.props.initing > 0}
                     dataSource={(this.props.data || []).map(m => {
-                        m.key = m.id
+                        m.id = m.id.toString()
+                        m.key = m.id.toString()
                         return m
                     })}
                     titles={['参赛选手', '晋级选手']}
                     operations={['晋级', '撤回']}
-                    targetKeys={this.state.targetKeys}
+                    targetKeys={this.state.targetKeys || this.props.configResult}
                     showSearch
                     onChange={this.onChange}
                     filterOption={(inputValue, item) =>
@@ -157,7 +155,7 @@ const mapState = (state, ownProps) => ({
 
 const mapDispatch = (dispatch) => ({
     init: async (data) => {
-        await dispatch.contestantConfigModel.init({filter: [], sort: [defaultSort], page: defaultPage})
+        await dispatch.contestantConfigModel.init({filter: [], sort: [defaultSort], page: {current: 1, pageSize: 999}})
         await dispatch.teamConfigModel.init()
     },
 })

@@ -54,7 +54,7 @@ const CustomMenu = props => {
         return menus
     }
 
-    return <Menu theme="dark" openKeys={openKeys || [props.selectMenuData.parentMenuKey]}
+    return <Menu theme="dark" openKeys={openKeys || [props.selectMenuData && props.selectMenuData.parentMenuKey]}
                  onOpenChange={onOpenChange} mode="inline" inlineIndent={18}
                  selectedKeys={props.selectMenuKey} onSelect={onSelect}>
         {menuMap(props.menus)}

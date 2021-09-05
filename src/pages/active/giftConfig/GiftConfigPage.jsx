@@ -14,7 +14,8 @@ import {
     Spin,
     Table,
     Tag,
-    Tooltip
+    Tooltip,
+    Image
 } from "antd";
 import {defaultFormItemLayout} from "../../../utils/formUtils";
 import {connect} from "react-redux";
@@ -34,7 +35,7 @@ const columns = (operateFunc) => [{
     title: '图片',
     dataIndex: 'image',
     key: 'image',
-    render: value => value ? <img style={{height: '48px'}} src={getImgUrl(value)}/> : <div/>
+    render: value => value ? <Image width="48px" src={getImgUrl(value)}/> : <div/>
     // <DefaultUserImgIcon style={{fontSize: '32px'}}/>
 }, {
     title: '名称',
@@ -67,60 +68,10 @@ const columns = (operateFunc) => [{
         <a onClick={() => operateFunc.showGiftList(record)}>查看领取信息</a> : <div/>)
 }]
 
-const giftListData = [{
-    code: "a225SF-221ded-SDS223-DD1412",
-    status: "已领取",
-    people: "吴无物",
-    time: "2021-08-11 12:15:51",
-    activeStageName: "32晋16竞猜活动"
-}, {
-    code: "a225SF-221ded-SDS223-DD1412",
-    status: "未领取",
-    people: "",
-    time: "",
-    activeStageName: ""
-}, {
-    code: "a225SF-221ded-SDS223-DD1412",
-    status: "未领取",
-    people: "",
-    time: "",
-    activeStageName: ""
-}, {
-    code: "a225SF-221ded-SDS223-DD1412",
-    status: "已领取",
-    people: "吴无物",
-    time: "2021-08-11 12:15:51",
-    activeStageName: "32晋16竞猜活动"
-}, {
-    code: "a225SF-221ded-SDS223-DD1412",
-    status: "未领取",
-    people: "",
-    time: "",
-    activeStageName: ""
-}, {
-    code: "a225SF-221ded-SDS223-DD1412",
-    status: "已领取",
-    people: "吴无物",
-    time: "2021-08-11 12:15:51",
-    activeStageName: "32晋16竞猜活动"
-}, {
-    code: "a225SF-221ded-SDS223-DD1412",
-    status: "未领取",
-    people: "",
-    time: "",
-    activeStageName: ""
-}, {
-    code: "a225SF-221ded-SDS223-DD1412",
-    status: "已领取",
-    people: "吴无物",
-    time: "2021-08-11 12:15:51",
-    activeStageName: "32晋16竞猜活动"
-},]
-
-const giftListColumns = [{
+const giftListColumns = (stageData) => [{
     title: '兑换码',
-    dataIndex: 'code',
-    key: 'code',
+    dataIndex: 'tokens',
+    key: 'tokens',
 }, {
     title: '领取状态',
     dataIndex: 'status',
@@ -132,16 +83,21 @@ const giftListColumns = [{
     key: 'people',
 }, {
     title: '领取时间',
-    dataIndex: 'time',
-    key: 'time',
+    dataIndex: 'expire',
+    key: 'expire',
 }, {
     title: '关联活动',
-    dataIndex: 'activeStageName',
-    key: 'activeStageName',
+    dataIndex: 'stageId',
+    key: 'stageId',
+    render: value => {
+        let match = (stageData || []).filter(m => m.id === value)
+        return match.length > 0 ? match[0].name : ""
+    }
 }]
 
-const GiftList = ({visible, data, onCancel}) => {
+const GiftList = ({visible, data, onCancel, stageData}) => {
     return <Modal
+        destroyOnClose
         maskClosable={false}
         visible={visible}
         title={"奖品详情"}
@@ -152,7 +108,7 @@ const GiftList = ({visible, data, onCancel}) => {
         width={"1000px"}>
         <Table
             dataSource={data}
-            columns={giftListColumns}
+            columns={giftListColumns(stageData)}
         />
     </Modal>
 }
@@ -327,7 +283,7 @@ class GiftConfigPage extends Component {
         } else {
             await this.props.add(data)
         }
-        this.props.init()
+        this.props.fetch(this.state.searchData)
     }
 
     importDetail = () => {
@@ -340,7 +296,7 @@ class GiftConfigPage extends Component {
                 ],
                 "expire": "2021-08-14T09:51:05.174Z",
             }
-            request("post", "api/reward_ticket", data)
+            request("post", "api2/reward_ticket", data)
         }
     }
 
@@ -352,12 +308,9 @@ class GiftConfigPage extends Component {
     render() {
         return (
             <React.Fragment>
-                <div className="site-layout-background"
-                     style={{
-                         height: '90vh'
-                     }}>
-                    <div style={{marginBottom: '10px', marginLeft: '10px'}}>
-                        <Row gutter={10}>
+                <div className="site-layout-background">
+                    <div style={{paddingBottom: '10px', paddingLeft: '10px'}}>
+                        <Row>
                             <Col>
                                 <Button type="primary" icon={<PlusOutlined/>}
                                         style={{marginLeft: '10px', marginTop: '20px'}}
@@ -411,8 +364,8 @@ class GiftConfigPage extends Component {
                                dataSource={this.props.data}/>
                     </Spin>
                 </div>
-                <GiftList onCancel={() => this.modalViewChange("giftListShowVisible", false)} data={giftListData}
-                          visible={this.state.modalVisibleState.giftListShowVisible}/>
+                <GiftList onCancel={() => this.modalViewChange("giftListShowVisible", false)} data={[]}
+                          visible={this.state.modalVisibleState.giftListShowVisible} stageData={this.props.stageData}/>
                 <EditForm visible={this.state.modalVisibleState.editVisible} data={this.state.selectRecord}
                           onCancel={() => this.modalViewChange("editVisible", false)} submit={this.submit}/>
             </React.Fragment>
@@ -423,6 +376,7 @@ class GiftConfigPage extends Component {
 
 const mapState = (state, ownProps) => ({
     ...state.rewardConfigModel,
+    stageData: state.activeStageConfigModel.data,
     initing: state.loading.effects.rewardConfigModel.init,
     loading: state.loading.models.rewardConfigModel,
     ...ownProps
@@ -431,6 +385,7 @@ const mapState = (state, ownProps) => ({
 const mapDispatch = (dispatch) => ({
     fetch: async (data) => {
         await dispatch.rewardConfigModel.init(data)
+        await dispatch.activeStageConfigModel.init({filter: [], sort: [defaultSort], page: {current: 1, pageSize: 999}})
     },
     /*编辑*/
     update: async (data) => {
