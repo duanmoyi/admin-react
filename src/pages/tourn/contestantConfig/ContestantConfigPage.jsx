@@ -1,6 +1,6 @@
 import React, {Component, useEffect, useState} from 'react';
 import {Button, Cascader, Col, Form, Input, message, Modal, Radio, Row, Select, Spin, Table, Tag, Image} from "antd";
-import {PlusOutlined} from "@ant-design/icons";
+import {ExclamationCircleOutlined, PlusOutlined} from "@ant-design/icons";
 import {defaultFormItemLayout} from "../../../utils/formUtils";
 import {connect} from "react-redux";
 import {Guid} from "js-guid";
@@ -15,6 +15,7 @@ import {
 import {getCityData} from "../../../request/request";
 
 const {TextArea} = Input
+const {confirm} = Modal
 
 const columns = (operateFunc, teamData) => [{
     title: '头像',
@@ -268,10 +269,10 @@ const EditForm = ({visible, data, onCancel, submit, teamData, cityData}) => {
                 <Form.Item name="avatar" label={"选手头像"}>
                     <CommonImgUpload uploadFunc={imgUploadFunc} imgFile={imgFile}/>
                 </Form.Item>
-                <Form.Item name="specialty" label={"特长描述"}>
+                <Form.Item name="specialty" label={"特长"}>
                     <TextArea rows={2}/>
                 </Form.Item>
-                <Form.Item name="remark" label={"其他描述"}>
+                <Form.Item name="details" label={"描述"}>
                     <TextArea rows={2}/>
                 </Form.Item>
             </Form>
@@ -288,7 +289,6 @@ class ContestantConfigPage extends Component {
 
     state = {
         loading: false,
-        selectRecord: {},
         modalVisibleState: {editVisible: false},
         searchData: {filter: [], sort: [defaultSort], page: this.props.page}
     }
@@ -330,17 +330,46 @@ class ContestantConfigPage extends Component {
         return result
     }
 
+    onChange = (selectedRowKeys, selectedRows) => {
+        this.setState({selectRecord: selectedRows[0]})
+    }
+
+    delete = () => {
+        let deleteFunc = this.props.delete
+        let record = this.state.selectRecord
+        let init = () => this.props.fetch(this.state.searchData, "init")
+        confirm({
+            title: '提醒',
+            icon: <ExclamationCircleOutlined/>,
+            content: '确定删除选手？',
+            async onOk() {
+                await deleteFunc(record.id)
+                init()
+            },
+        });
+    }
+
     render() {
         return (
             <React.Fragment>
                 <div className="site-layout-background">
                     <div style={{marginBottom: '10px', marginLeft: '10px'}}>
-                        <Button type="primary" icon={<PlusOutlined/>}
-                                style={{marginLeft: '10px', marginTop: '20px'}}
-                                onClick={() => {
-                                    this.modalViewChange("editVisible", true)
-                                    this.setState({selectRecord: {}})
-                                }}>添加</Button>
+                        <Row gutter={20}>
+                            <Col>
+                                <Button type="primary" icon={<PlusOutlined/>}
+                                        style={{marginTop: '20px'}}
+                                        onClick={() => {
+                                            this.modalViewChange("editVisible", true)
+                                            this.setState({selectRecord: {}})
+                                        }}>添加</Button>
+                            </Col>
+                            <Col>
+                                <Button type="primary" danger icon={<PlusOutlined/>}
+                                        style={{marginTop: '20px'}}
+                                        disabled={!this.state.selectRecord}
+                                        onClick={this.delete}>删除</Button>
+                            </Col>
+                        </Row>
                     </div>
                     <Spin tip={"正在加载。。。"} spinning={this.props.initing > 0 || this.props.loading > 0}>
                         <Table style={{margin: '20px 20px'}} loading={this.state.loading} rowKey={"id"} size={"small"}
@@ -352,6 +381,11 @@ class ContestantConfigPage extends Component {
                                        },
                                    })
                                }
+                               rowSelection={{
+                                   type: "radio",
+                                   onChange: this.onChange,
+                                   selectedRowKeys: (this.state.selectRecord && this.state.selectRecord.id) ? [this.state.selectRecord.id] : []
+                               }}
                                columns={columns({
                                    editFunc: () => this.modalViewChange("editVisible", true),
                                    editTeam: () => this.modalViewChange("editTutorVisible", true),
@@ -360,10 +394,10 @@ class ContestantConfigPage extends Component {
                                pagination={{...this.props.page}}/>
                     </Spin>
                 </div>
-                <EditForm visible={this.state.modalVisibleState.editVisible} data={this.state.selectRecord}
+                <EditForm visible={this.state.modalVisibleState.editVisible} data={this.state.selectRecord || {}}
                           teamData={this.props.teamData} cityData={this.cityData}
                           onCancel={() => this.modalViewChange("editVisible", false)} submit={this.submit}/>
-                <EditTutorForm visible={this.state.modalVisibleState.editTutorVisible} data={this.state.selectRecord}
+                <EditTutorForm visible={this.state.modalVisibleState.editTutorVisible} data={this.state.selectRecord || {}}
                                teamData={this.props.teamData}
                                onCancel={() => this.modalViewChange("editTutorVisible", false)}
                                submit={this.submit}/>
@@ -388,7 +422,7 @@ const mapDispatch = (dispatch) => ({
                 sort: [defaultSort],
                 page: {current: 1, pageSize: 10}
             })
-        }else{
+        } else {
             await dispatch.contestantConfigModel.init(data)
         }
         await dispatch.teamConfigModel.init()

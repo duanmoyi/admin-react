@@ -37,8 +37,9 @@ const {confirm} = Modal;
 
 const stageResultColumns = [{
     title: '选手头像',
-    dataIndex: 'picture',
-    key: 'picture',
+    dataIndex: 'avatar',
+    key: 'avatar',
+    render: value => value ? <Image width="48px" src={getImgUrl(value)}/> : <div/>
 }, {
     title: '选手姓名',
     dataIndex: 'name',
@@ -223,10 +224,10 @@ const EditForm = ({data, visible, submit, onCancel}) => {
                     <RangePicker showTime format={"YYYY-MM-DD HH:mm:ss"} allowClear placeholder={["开始时间", "结束时间"]}/>
                 </Form.Item>
                 <Form.Item name="entranceImage" label={"首页标题图片"}>
-                    <CommonImgUpload uploadFunc={imgUploadFunc(setHomeTitleImg)} imgFile={homeTitleImg}/>
+                    <CommonImgUpload disabled={true} uploadFunc={imgUploadFunc(setHomeTitleImg)} imgFile={homeTitleImg}/>
                 </Form.Item>
                 <Form.Item name="rankImage" label={"人气榜标题图片"}>
-                    <CommonImgUpload uploadFunc={imgUploadFunc(setOrderTitleImg)} imgFile={orderTitleImg}/>
+                    <CommonImgUpload disabled={true} uploadFunc={imgUploadFunc(setOrderTitleImg)} imgFile={orderTitleImg}/>
                 </Form.Item>
                 <Form.Item name="remark" label={"备注"}>
                     <TextArea rows={2}/>
@@ -458,7 +459,7 @@ class ActiveStageConfigPage extends Component {
 
     toRewardConfig = async () => {
         let id = this.state.selectRecord.id
-        let result = await request("get", "api2/stages/" + id + "/rewards")
+        let result = await request("get", "api/stages/" + id + "/rewards")
         this.setState({
             rewardDatas: {
                 data: (result && result._embedded && result._embedded.stageRewardConfigs) || [],
@@ -547,11 +548,11 @@ class ActiveStageConfigPage extends Component {
         this.init()
     }
 
-    getActiveResult = () => {
-        if (!this.state.selectRecord || !this.state.selectRecord.preAdvancedContestants || this.state.selectRecord.preAdvancedContestants.length < 1) {
+    getActiveResult = (record) => {
+        if (!record || !record.preAdvancedContestants || record.preAdvancedContestants.length < 1) {
             return []
         }
-        return this.props.contestants.filter(m => this.state.selectRecord.preAdvancedContestants.filter(n => n === m.id).length > 0)
+        return this.props.contestants.filter(m => record.preAdvancedContestants.filter(n => n === m.id).length > 0)
     }
 
     enableOperate = {
@@ -641,8 +642,8 @@ class ActiveStageConfigPage extends Component {
                                        this.setState({selectRecord: record})
                                        this.modalViewChange("giftRecordVisible", true)
                                    },
-                                   viewStageResult: (value, record) => {
-                                       this.setState({selectRecord: record})
+                                   viewStageResult: async (value, record) => {
+                                       this.setState({selectRecord: record, activeResult:this.getActiveResult(record)})
                                        this.modalViewChange("stageResultVisible", true)
                                    },
                                })}
@@ -663,7 +664,7 @@ class ActiveStageConfigPage extends Component {
                 <GiftRecord data={this.state.selectRecord && this.state.selectRecord.id}
                             visible={this.state.modalVisibleState.giftRecordVisible}
                             onCancel={() => this.modalViewChange("giftRecordVisible", false)}/>
-                <StageResultView data={this.getActiveResult()}
+                <StageResultView data={this.state.activeResult}
                                  visible={this.state.modalVisibleState.stageResultVisible}
                                  onCancel={() => this.modalViewChange("stageResultVisible", false)}/>
                 <ActiveStageContestantPage visible={this.state.modalVisibleState.configStageResultVisible}

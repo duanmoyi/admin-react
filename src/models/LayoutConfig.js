@@ -56,6 +56,12 @@ const layoutMenuData = [
         icon: <UploadOutlined style={{fontSize: '15px'}}/>,
         href: 'memberConfig'
     }, {
+        key: 'userInfo',
+        title: '用户管理',
+        authority: ["ADMIN"],
+        icon: <UploadOutlined style={{fontSize: '15px'}}/>,
+        href: 'userInfo'
+    }, {
         key: 'registerInfo',
         title: '复星康养星潮达人',
         authority: ["ADMIN", "REGISTER_ADMIN"],
@@ -66,11 +72,6 @@ const layoutMenuData = [
 //     title: 'sysConfig',
 //     icon: <UploadOutlined style={{fontSize: '15px'}}/>,
 //     href: '/sysConfig'
-//     }, {
-//         key: 'userInfo',
-//         title: '用户管理',
-//         icon: <UploadOutlined style={{fontSize: '15px'}}/>,
-//         href: 'userInfo'
     }].map(m => {
     let key = m.key
     if (m.subMenus) {

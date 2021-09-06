@@ -296,7 +296,7 @@ class GiftConfigPage extends Component {
                 ],
                 "expire": "2021-08-14T09:51:05.174Z",
             }
-            request("post", "api2/reward_ticket", data)
+            request("post", "api/reward_ticket", data)
         }
     }
 

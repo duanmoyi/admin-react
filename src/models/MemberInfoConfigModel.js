@@ -13,7 +13,7 @@ export default  {
     },
     effects: (dispatch) => ({
         async init(payload, rootState) {
-            let result = await tableFetch(payload, "api2/user_info", "userInfoes")
+            let result = await tableFetch(payload, "api/user_info", "userInfoes")
             dispatch.memberInfoConfig.updateData(result)
         },
     })

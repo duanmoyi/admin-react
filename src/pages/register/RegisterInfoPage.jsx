@@ -35,7 +35,7 @@ const exportExcel = async () => {
     const data = await tableFetch({
         sort: [{field: 'seq', order: 'asc'}],
         page: {current: 1, pageSize: 99999}
-    }, "api2/registers", "registerInfoes", {field: 'seq', order: 'asc'})
+    }, "api/registers", "registerInfoes", {field: 'seq', order: 'asc'})
     const wb = new xl.Workbook();
     const cellStyle = wb.createStyle(cellStyleConfig);
     const headStyle = wb.createStyle(headStyleConfig);

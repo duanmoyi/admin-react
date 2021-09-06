@@ -18,7 +18,7 @@ export const loginUserConfig = {
         async login(payload, rootState) {
             const result = await login(payload)
             if (result.status === 200) {
-                const userInfo = await request("get", "api2/users/user_info")
+                const userInfo = await request("get", "api/users/user_info")
                 if (userInfo) {
                     localStorage.setItem("userInfo", JSON.stringify(userInfo))
                 }

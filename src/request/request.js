@@ -14,7 +14,7 @@ export const login = async ({username, password}) => {
         const serverConfig = await getServerConfig()
         let response = await axios({
             method: "post",
-            url: "api2/login",
+            url: "api/login",
             baseURL: serverConfig.apiHost,
             data: "username=" + username + "&password=" + password,
             headers: {
@@ -43,7 +43,7 @@ export const login = async ({username, password}) => {
 }
 
 export const logout = async () => {
-    await request("put", "api2/logout", undefined, operateSuccessFunc)
+    await request("put", "api/logout", undefined, operateSuccessFunc)
 }
 
 export const resetPassword = async data => {
@@ -51,7 +51,7 @@ export const resetPassword = async data => {
     try {
         const response = await axios({
             method: "put",
-            url: "api2/users/change_password",
+            url: "api/users/change_password",
             baseURL: serverConfig.apiHost,
             data: data,
             withCredentials: true,
@@ -81,6 +81,34 @@ export const loginErrorPrompt = status => {
             break
         default:
             message.error("登录失败，错误：" + status)
+    }
+}
+
+export const deleteContestantPrompt = async status => {
+    if (!status) {
+        message.error("服务异常！")
+    }
+    switch (status) {
+        case 500:
+        case 409:
+            message.error("删除失败，该选手已参与活动！")
+            break
+        case 404:
+            message.error("服务异常！")
+            break
+        case 401:
+            message.error("登录过期，请重新登录！")
+            localStorage.removeItem("userInfo")
+            await navigate("login")
+            break
+        case 403:
+            message.error("无请求权限！")
+            break
+        case 400:
+            message.error("操作失败，参数错误！")
+            break
+        default:
+            message.error("操作失败，错误：" + status)
     }
 }
 

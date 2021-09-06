@@ -4,11 +4,11 @@ import {
     defaultSort,
     getColumnInputSearchProps, getColumnTimeRangeSearchProps,
     getImgUrl,
-    imgUploadFunc,
-    renderTime, setImg,
+    imgUploadFunc, renderRole,
+    renderTime, RoleData, setImg,
     tableChange
 } from "../../../utils/core";
-import {Button, Col, Form, Image, Input, Modal, Row, Spin, Table} from "antd";
+import {Button, Col, Form, Image, Input, Modal, Row, Select, Spin, Table} from "antd";
 import {Guid} from "js-guid";
 import {defaultFormItemLayout} from "../../../utils/formUtils";
 import {PlusOutlined} from "@ant-design/icons";
@@ -27,6 +27,11 @@ const columns = (operateFunc, userInfo) => [{
     dataIndex: 'name',
     key: 'name',
     ...getColumnInputSearchProps("姓名")
+}, {
+    title: '角色',
+    dataIndex: 'roles',
+    key: 'roles',
+    render: renderRole
 }, {
     title: '用户名',
     dataIndex: 'username',
@@ -64,11 +69,11 @@ const EditForm = ({visible, data, onCancel, submit}) => {
         if (data) {
             form.setFieldsValue(data)
             setImg(data.avatar, setImgFile)
-        }else{
+        } else {
             form.resetFields()
             setImgFile([])
         }
-    },[data])
+    }, [data])
 
     return (
         <Modal
@@ -124,6 +129,14 @@ const EditForm = ({visible, data, onCancel, submit}) => {
                 }]}>
                     <Password placeholder="请输入"/>
                 </Form.Item> : <div/>}
+                <Form.Item name="roles" label={"用户角色"} rules={[{
+                    required: true,
+                    message: '选择用户角色!',
+                }]}>
+                    <Select mode="multiple" allowClear placeholder={"请选择用户角色"}>
+                        {RoleData.map(m => (<Select.Option value={m.key}>{m.roleName}</Select.Option>))}
+                    </Select>
+                </Form.Item>
                 <Form.Item name="email" label={"邮箱地址"}>
                     <Input placeholder="请输入"/>
                 </Form.Item>

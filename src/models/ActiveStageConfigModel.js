@@ -13,26 +13,26 @@ export default {
     },
     effects: (dispatch) => ({
         async init(payload, rootState) {
-            let result = await tableFetch(payload, "api2/stages", "stages")
+            let result = await tableFetch(payload, "api/stages", "stages")
             dispatch.activeStageConfigModel.updateData(result)
         },
         async update(payload, rootState) {
-            let result = await request("put", "api2/stages/" + payload.id, payload, operateSuccessFunc)
+            let result = await request("put", "api/stages/" + payload.id, payload, operateSuccessFunc)
         },
         async add(payload, rootState) {
-            let result = await request("post", "api2/stages", payload, operateSuccessFunc)
+            let result = await request("post", "api/stages", payload, operateSuccessFunc)
         },
         async start(payload, rootState) {
-            let result = await request("post", "api2/actions/start_stage", {stageId: payload}, operateSuccessFunc)
+            let result = await request("post", "api/actions/start_stage", {stageId: payload}, operateSuccessFunc)
         },
         async stop(payload, rootState) {
-            let result = await request("post", "api2/actions/stop_stage", {stageId: payload}, operateSuccessFunc)
+            let result = await request("post", "api/actions/stop_stage", {stageId: payload}, operateSuccessFunc)
         },
         async startRaffle(payload, rootState) {
-            let result = await request("post", "api2/actions/advance_contestants", payload, operateSuccessFunc)
+            let result = await request("post", "api/actions/advance_contestants", payload, operateSuccessFunc)
         },
         async configResult(payload, rootState) {
-            let result = await request("put", "api2/stages/" + payload.id, payload, operateSuccessFunc)
+            let result = await request("put", "api/stages/" + payload.id, payload, operateSuccessFunc)
         },
     })
 }

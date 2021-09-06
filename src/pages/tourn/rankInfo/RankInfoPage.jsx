@@ -129,9 +129,7 @@ class RankInfoPage extends Component {
                             <Spin tip={"正在加载。。。"} spinning={this.props.totalDataIniting > 0 || this.props.loading > 0}>
                                 <Table bordered loading={this.state.loading}
                                        columns={totalColumns(this.props.teamData)}
-                                       dataSource={this.props.totalRankData.data}
-                                       onChange={(pagination, filters, sorts, extra) => tableChange(pagination, this.filterConvert(filters), sorts, extra, this)}
-                                       pagination={{...this.props.totalRankData.page}}/>
+                                       dataSource={this.props.totalRankData.data}/>
                             </Spin>
                         </TabPane>
                         <TabPane tab="选手阶段排名" key="2">
@@ -171,7 +169,11 @@ const mapState = (state, ownProps) => ({
 
 const mapDispatch = (dispatch) => ({
     fetchTotalData: async (data) => {
-        await dispatch.rankInfoConfig.initTotalData(data)
+        await dispatch.rankInfoConfig.initTotalData({
+            filter: [],
+            sort: [],
+            page: {current: 1, pageSize: 999}
+        })
         await dispatch.teamConfigModel.init()
         await dispatch.activeStageConfigModel.init({
             filter: [],

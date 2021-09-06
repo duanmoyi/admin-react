@@ -25,13 +25,16 @@ export default {
     },
     effects: (dispatch) => ({
         async initTotalData(payload, rootState) {
-            let result = await tableFetch(payload, "api2/ranking/contestant", "contestantRankings")
+            let result = await tableFetch(payload, "api/ranking/contestant", "contestantRankings")
             dispatch.rankInfoConfig.updateTotalData(result)
         },
         async initStageData(payload, rootState) {
-            let result = await request("get", "api2/ranking/history" + "?stageId=" + payload)
-            debugger
-            dispatch.rankInfoConfig.updateStageData(result || [])
+            if (payload) {
+                let result = await request("get", "api/ranking/stage/" + payload)
+                dispatch.rankInfoConfig.updateStageData(result || [])
+            } else {
+                dispatch.rankInfoConfig.updateStageData([])
+            }
         },
     })
 }

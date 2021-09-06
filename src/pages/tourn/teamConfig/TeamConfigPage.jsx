@@ -283,7 +283,7 @@ class TeamConfigPage extends Component {
     }
 
     viewContestantList = async (teamId) => {
-        let data = await request("get", "api2/contestants?teamId=" + teamId)
+        let data = await request("get", "api/contestants?teamId=" + teamId)
         this.setState({
             contestantData: data && data._embedded && data._embedded.contestants || []
         })

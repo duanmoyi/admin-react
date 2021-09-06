@@ -8,6 +8,7 @@ const bodyParser = require('body-parser');
 const morgan = require('morgan');
 const configuration = require('./configuration/configuration.json');
 const cityJson = require('./configuration/city.json');
+const addressJson = require('./configuration/pca.json');
 const archiver = require('archiver')
 const Stream = require('stream')
 const Canvas = require('canvas')
@@ -23,6 +24,27 @@ app.use(fileUpload({
 
 //start app
 const port = process.env.PORT || configuration.serverPort;
+
+const addressData = (() => {
+    const data = addressJson
+    const result = []
+    for (let key in data) {
+        let unit = {}
+        unit.name = key
+
+        if(Array.isArray(data[key])){
+            unit.subList = data[key].map(m=>({name:m}))
+        }else{
+            let subList = []
+            for (let subKey in data[key]) {
+                subList.push({name: subKey, subList:data[key][subKey].map(m=>({name:m}))})
+            }
+            unit.subList = subList
+        }
+        result.push(unit)
+    }
+    return result
+})()
 
 const cityData = (() => {
     const zhixia = ['北京', '天津', '上海', '重庆', '台湾', '香港', '澳门']
@@ -175,6 +197,14 @@ app.get('/config/load', async (req, res) => {
 app.get('/config/cityData', async (req, res) => {
     try {
         res.send(cityData);
+    } catch (err) {
+        res.status(500).send(err);
+    }
+});
+
+app.get('/config/addressData', async (req, res) => {
+    try {
+        res.send(addressData);
     } catch (err) {
         res.status(500).send(err);
     }

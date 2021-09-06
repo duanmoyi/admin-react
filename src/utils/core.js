@@ -10,6 +10,26 @@ import {navigate} from "@reach/router";
 
 const {RangePicker} = DatePicker
 
+export const RoleData = [{
+    key: "ADMIN",
+    roleName: "系统管理员"
+}, {
+    key: "VOTE_ADMIN",
+    roleName: "星火力管理员"
+}, {
+    key: "REGISTER_ADMIN",
+    roleName: "报名通道管理员"
+}]
+
+export const renderRole = (data) => {
+    return data.map(m => {
+        let match = RoleData.filter(n => n.key === m)
+        if (match.length > 0) {
+            return match[0].roleName
+        }
+    }).filter(m => m).join(",")
+}
+
 export const createRoutes = routeConfig => {
     if (routeConfig instanceof Array) {
         let routes = []
@@ -32,7 +52,7 @@ export const createRoutes = routeConfig => {
     return [routeConfig]
 }
 
-export const CommonImgUpload = ({uploadFunc, imgFile, maxCount = 1}) => {
+export const CommonImgUpload = ({uploadFunc, imgFile, maxCount = 1, ...otherProps}) => {
     const [fileList, setFileList] = useState([]);
 
     useEffect(() => {
@@ -66,6 +86,7 @@ export const CommonImgUpload = ({uploadFunc, imgFile, maxCount = 1}) => {
 
     return (
         <Upload
+            {...otherProps}
             isImageUrl={isImageUrl}
             maxCount={maxCount}
             method="POST"

@@ -28,19 +28,19 @@ const ActiveRuleConfigForm = ({data, submit}) => {
             required: true,
             message: `请输入投票规则！`,
         },]}>
-            <TextArea rows={8}/>
+            <TextArea rows={6}/>
         </Form.Item>
         <Form.Item name="lotteryRule" label={"中奖规则"} rules={[{
             required: true,
             message: `请输入中奖规则！`,
         },]}>
-            <TextArea rows={8}/>
+            <TextArea rows={6}/>
         </Form.Item>
         <Form.Item name="exchangeRule" label={"领奖规则"} rules={[{
             required: true,
             message: `请输入领奖规则！`,
         },]}>
-            <TextArea rows={8}/>
+            <TextArea rows={6}/>
         </Form.Item>
         <Form.Item {...{
             wrapperCol: {
@@ -79,7 +79,7 @@ class ActiveRuleConfigPage extends React.Component {
         const {initing, loading} = this.props;
         return <div className="site-layout-background"
                     style={{
-                        paddingTop: "100px",
+                        paddingTop: "50px",
                     }}>
 
             <Spin tip={"正在加载。。。"} spinning={initing > 0 || loading > 0}>
